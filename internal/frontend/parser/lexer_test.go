@@ -11,7 +11,7 @@ import (
 const testFileDirPrefix = "../../.."
 
 func TestLexEmptyFile(t *testing.T) {
-	file := test_util.OpenTestFile(t, "0000-empty-file.yap", testFileDirPrefix)
+	file := test_util.OpenTestFile(t, test_util.EmptyFileYAP, testFileDirPrefix)
 	defer file.Close()
 
 	lex := parser.NewLexer(file)
@@ -24,13 +24,13 @@ func TestLexEmptyFile(t *testing.T) {
 
 // - print: "hello world"
 func TestLexOneLinePrintStatement(t *testing.T) {
-	file := test_util.OpenTestFile(t, "0001-one-line-print.yap", testFileDirPrefix)
+	file := test_util.OpenTestFile(t, test_util.OneLinePrintYAP, testFileDirPrefix)
 	defer file.Close()
 
 	lex := parser.NewLexer(file)
 	tokens, err := lex.Lex()
 
-	// Expecting 5 tokens in an empty file
+	// Expecting 5 tokens in simple print file
 	assert.Nil(t, err)
 	assert.Equal(t, 5, len(tokens))
 	assert.Equal(t, parser.TokenDash, tokens[0].Kind)
@@ -57,4 +57,17 @@ func TestLexOneLinePrintStatement(t *testing.T) {
 	assert.Equal(t, "", tokens[4].Value)
 	assert.Equal(t, 23, tokens[4].Col)
 	assert.Equal(t, 1, tokens[4].Line)
+}
+
+// Multiline should have 5 tokens per line, with 5 lines = 25 tokens
+func TestLexMultiLinePrintStatement(t *testing.T) {
+	file := test_util.OpenTestFile(t, test_util.MultiLinePrintYAP, testFileDirPrefix)
+	defer file.Close()
+
+	lex := parser.NewLexer(file)
+	tokens, err := lex.Lex()
+
+	// Expecting 5 tokens in print file
+	assert.Nil(t, err)
+	assert.Equal(t, 25, len(tokens))
 }

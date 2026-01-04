@@ -9,7 +9,7 @@ import (
 )
 
 func TestEmptyFile(t *testing.T) {
-	filepath := filepath.Join(test_util.TestFiles, "0000-empty-file.yap")
+	filepath := filepath.Join(test_util.TestFilesDir, test_util.EmptyFileYAP)
 	args := []string{filepath}
 
 	commands.RunCmd(args)

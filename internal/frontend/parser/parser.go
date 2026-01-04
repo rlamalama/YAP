@@ -27,15 +27,14 @@ func (p *Parser) peek() *Token {
 	return p.tokens[p.pos]
 }
 
-func (p *Parser) next() (*Token, bool) {
+func (p *Parser) next() *Token {
 	tok := p.peek()
 	p.pos++
-	end := tok.Kind == TokenEOF
-	return tok, end
+	return tok
 }
 
 func (p *Parser) expect(kind TokenKind) (*Token, error) {
-	tok, _ := p.next()
+	tok := p.next()
 	if tok == nil {
 		return nil, fmt.Errorf("expected %v, no more tokens", kind)
 	}
@@ -74,12 +73,14 @@ func (p *Parser) parseProgram() (*Program, error) {
 	}
 
 	stmts := []Stmt{}
+	for p.peek().Kind != TokenEOF {
 
-	stmt, err := p.parseStmt()
-	if err != nil {
-		return nil, err
+		stmt, err := p.parseStmt()
+		if err != nil {
+			return nil, err
+		}
+		stmts = append(stmts, stmt)
 	}
-	stmts = append(stmts, stmt)
 
 	prog.Statements = stmts
 	return prog, nil

@@ -2,6 +2,7 @@ package parser
 
 type TokenKind int
 
+// Order must remain the same as below
 const (
 	TokenDash TokenKind = iota
 	TokenIdentifier
@@ -12,6 +13,25 @@ const (
 	TokenEOL
 	TokenEOF
 )
+
+func (tk TokenKind) String() string {
+	// Order must remain the same as above
+	names := [...]string{
+		"Dash",
+		"Identifer",
+		"Colon",
+		"Scalar",
+		"Indent",
+		"TokenDedent",
+		"TokenEOL",
+		"TokenEOF",
+	}
+
+	if tk < TokenDash || tk > TokenEOF {
+		return "Unknown"
+	}
+	return names[tk]
+}
 
 type Token struct {
 	Kind  TokenKind

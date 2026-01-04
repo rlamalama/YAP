@@ -27,7 +27,6 @@ func (l *Lexer) Lex() ([]*Token, error) {
 			break
 		}
 		if isBlank(line) {
-			fmt.Println("BLANK LINE: ", l.scanner.line)
 			continue
 		}
 
@@ -36,7 +35,6 @@ func (l *Lexer) Lex() ([]*Token, error) {
 		if err := l.lexLine(line, indent); err != nil {
 			return l.tokens, err
 		}
-
 	}
 
 	return l.tokens, nil
