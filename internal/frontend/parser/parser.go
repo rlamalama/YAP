@@ -119,7 +119,7 @@ func (p *Parser) parsePrint() (Stmt, error) {
 	}
 
 	// Optional: consume newline if present
-	if p.peek().Kind == TokenEOL {
+	if p.peek().Kind == TokenNewline {
 		p.next()
 	}
 

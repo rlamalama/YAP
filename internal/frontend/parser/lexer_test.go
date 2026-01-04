@@ -53,7 +53,7 @@ func TestLexOneLinePrintStatement(t *testing.T) {
 	assert.Equal(t, 10, tokens[3].Col)
 	assert.Equal(t, 1, tokens[3].Line)
 
-	assert.Equal(t, parser.TokenEOL, tokens[4].Kind)
+	assert.Equal(t, parser.TokenNewline, tokens[4].Kind)
 	assert.Equal(t, "", tokens[4].Value)
 	assert.Equal(t, 23, tokens[4].Col)
 	assert.Equal(t, 1, tokens[4].Line)

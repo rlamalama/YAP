@@ -91,7 +91,7 @@ func (l *Lexer) lexLine(line string, indent int) error {
 			col = i + 1
 		}
 	}
-	l.emit(TokenEOL, "", l.scanner.line, col)
+	l.emit(TokenNewline, "", l.scanner.line, col)
 
 	return nil
 }

@@ -10,7 +10,7 @@ const (
 	TokenScalar
 	TokenIndent
 	TokenDedent
-	TokenEOL
+	TokenNewline
 	TokenEOF
 )
 
@@ -23,7 +23,7 @@ func (tk TokenKind) String() string {
 		"Scalar",
 		"Indent",
 		"TokenDedent",
-		"TokenEOL",
+		"TokenNewline",
 		"TokenEOF",
 	}
 
