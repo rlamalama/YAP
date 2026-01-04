@@ -10,6 +10,7 @@ const (
 	TokenIndent
 	TokenDedent
 	TokenEOL
+	TokenEOF
 )
 
 type Token struct {

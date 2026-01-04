@@ -25,7 +25,7 @@ test:
 clean:
 	@rm -rf ${GO_BUILD_OUT}
 
-build: clean generate
+build: clean 
 	mkdir -p $(GO_BUILD_OUT)
 	go version
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -a -installsuffix cgo $(LDFLAGS) -o $(GO_BUILD_OUT) $(GO_BUILD_PKGS)

@@ -38,6 +38,7 @@ func (l *Lexer) Lex() ([]*Token, error) {
 		}
 
 	}
+
 	return l.tokens, nil
 }
 
@@ -53,14 +54,15 @@ func (l *Lexer) lexLine(line string, indent int) error {
 
 	for i < len(line) {
 		switch {
-		case line[i] == ':':
-			l.emit(TokenColon, ":", l.scanner.line, col)
-			i++
-			col++
+
 		case isSpace(line[i]):
 			i++
 			col++
 
+		case line[i] == ':':
+			l.emit(TokenColon, ":", l.scanner.line, col)
+			i++
+			col++
 		case isAlpha(line[i]):
 			start := i
 			for i < len(line) && isAlphaNum(line[i]) {
@@ -68,6 +70,23 @@ func (l *Lexer) lexLine(line string, indent int) error {
 			}
 			l.emit(TokenIdentifier, line[start:i], l.scanner.line, col)
 			col += i - start
+		case line[i] == '"':
+			start := i + 1
+			i++ // consume opening quote
+
+			for i < len(line) && line[i] != '"' {
+				i++
+			}
+
+			if i >= len(line) {
+				return fmt.Errorf("unterminated string at line %d", l.scanner.line)
+			}
+
+			value := line[start:i]
+			l.emit(TokenScalar, value, l.scanner.line, col)
+
+			i++ // consume closing quote
+			col += (i - start) + 1
 		default:
 			l.emit(TokenScalar, line[i:], l.scanner.line, col)
 			i = len(line)

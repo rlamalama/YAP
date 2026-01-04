@@ -3,15 +3,15 @@ package parser_test
 import (
 	"testing"
 
-	"github.com/rlamalama/YAP/internal/parser"
-	"github.com/rlamalama/YAP/test"
+	"github.com/rlamalama/YAP/internal/frontend/parser"
+	test_util "github.com/rlamalama/YAP/test/test-util"
 	"github.com/stretchr/testify/assert"
 )
 
-const testFileDirPrefix = "../.."
+const testFileDirPrefix = "../../.."
 
 func TestLexEmptyFile(t *testing.T) {
-	file := test.OpenTestFile(t, "0000-empty-file.yap", testFileDirPrefix)
+	file := test_util.OpenTestFile(t, "0000-empty-file.yap", testFileDirPrefix)
 	defer file.Close()
 
 	lex := parser.NewLexer(file)
@@ -24,7 +24,7 @@ func TestLexEmptyFile(t *testing.T) {
 
 // - print: "hello world"
 func TestLexOneLinePrintStatement(t *testing.T) {
-	file := test.OpenTestFile(t, "0001-one-line-print.yap", testFileDirPrefix)
+	file := test_util.OpenTestFile(t, "0001-one-line-print.yap", testFileDirPrefix)
 	defer file.Close()
 
 	lex := parser.NewLexer(file)
@@ -49,7 +49,7 @@ func TestLexOneLinePrintStatement(t *testing.T) {
 	assert.Equal(t, 1, tokens[2].Line)
 
 	assert.Equal(t, parser.TokenScalar, tokens[3].Kind)
-	assert.Equal(t, "\"hello world\"", tokens[3].Value)
+	assert.Equal(t, "hello world", tokens[3].Value)
 	assert.Equal(t, 10, tokens[3].Col)
 	assert.Equal(t, 1, tokens[3].Line)
 
