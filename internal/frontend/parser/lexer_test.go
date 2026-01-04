@@ -1,6 +1,7 @@
 package parser_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/rlamalama/YAP/internal/frontend/parser"
@@ -70,4 +71,44 @@ func TestLexMultiLinePrintStatement(t *testing.T) {
 	// Expecting 5 tokens in print file
 	assert.Nil(t, err)
 	assert.Equal(t, 25, len(tokens))
+}
+
+func TestLexBasicSetIfStatement(t *testing.T) {
+	_ = `
+- set:
+    x: 5
+- if: 
+  condition: "x > 3"
+  then:
+    - print: "hello world"
+`
+	// Dash ID COLON NL (4)
+	// INDENT (1)
+	// ID COLON SCALAR NL (4)
+	// DEDENT (1)
+	// DASH ID COLON NL (4) good through here
+	// INDENT (1)
+	// ID COLON SCLAR  NL (4)
+	// ID COLON NL (3)
+	// INDENT (1)
+	// DASH ID COLON SCALAR NL (5)
+	// DEDENT DEDENT (2)
+
+	file := test_util.OpenTestFile(t, test_util.BasicSetIfYAP, testFileDirPrefix)
+	defer file.Close()
+
+	lex := parser.NewLexer(file)
+	tokens, err := lex.Lex()
+	for _, tok := range tokens {
+		fmt.Println(tok.Kind.String())
+	}
+
+	// Expecting 5 tokens in print file
+
+	assert.Nil(t, err)
+	assert.Equal(t, 30, len(tokens))
+}
+
+func TestLexNoTabs(t *testing.T) {
+	t.Skip("TODO: Testing invalid no tab support")
 }
