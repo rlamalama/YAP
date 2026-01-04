@@ -1,20 +1,23 @@
 package parser
 
 import (
-	"fmt"
 	"io"
 	"strings"
+
+	yaperror "github.com/rlamalama/YAP/internal/error"
 )
 
 type Lexer struct {
+	filename    string
 	scanner     *Scanner
 	indentStack *Stack
 	tokens      []*Token
 }
 
-func NewLexer(r io.Reader) *Lexer {
+func NewLexer(r io.Reader, filename string) *Lexer {
 
 	return &Lexer{
+		filename:    filename,
 		scanner:     NewScanner(r),
 		indentStack: NewStackWithElem(0),
 		tokens:      []*Token{},
@@ -55,13 +58,11 @@ func (l *Lexer) handleIndent(indent int) error {
 	currLine := l.scanner.line
 	prevIndent, ok := l.indentStack.Peek()
 
-	fmt.Println("CURR INDENT --> ", prevIndent, "EVALUATED INDENT -->", indent, "CURR STACK", l.indentStack)
 	if !ok {
-		return fmt.Errorf("error parsing indents on line %d", currLine)
+		return yaperror.NewInvalidIndentError(l.filename, currLine, 1, indent, 0)
 	}
 
 	if indent > prevIndent {
-		fmt.Println("PUSHINGGGGG")
 		l.indentStack.Push(indent)
 		l.emit(TokenIndent, "", currLine, indent)
 		return nil
@@ -69,9 +70,9 @@ func (l *Lexer) handleIndent(indent int) error {
 
 	if indent < prevIndent {
 		for {
-			prevIndent, _ = l.indentStack.Peek()
+			prevIndent, ok = l.indentStack.Peek()
 			if !ok {
-				return fmt.Errorf("error parsing indents on line %d", currLine)
+				return yaperror.NewInvalidIndentError(l.filename, currLine, 1, indent, prevIndent)
 			}
 			if indent == prevIndent {
 				break
@@ -80,11 +81,11 @@ func (l *Lexer) handleIndent(indent int) error {
 				prevIndent, _ = l.indentStack.Pop()
 			}
 			if l.indentStack.Length() == 0 {
-				return fmt.Errorf("invalid formatting for indents on line %d with %d spaces vs %d prev", currLine, indent, prevIndent)
+				return yaperror.NewInvalidIndentError(l.filename, currLine, 1, indent, prevIndent)
 			}
 		}
 		if indent != prevIndent {
-			return fmt.Errorf("invalid formatting for indents on line %d with %d spaces vs %d prev", currLine, indent, prevIndent)
+			return yaperror.NewInvalidIndentError(l.filename, currLine, 1, indent, prevIndent)
 		}
 	}
 
@@ -104,6 +105,9 @@ func (l *Lexer) lexLine(line string, indent int) error {
 	for i < len(line) {
 		switch {
 
+		case isTab(line[i]):
+			return yaperror.NewTabCharError(l.filename, l.scanner.line, col)
+
 		case isSpace(line[i]):
 			i++
 			col++
@@ -120,6 +124,7 @@ func (l *Lexer) lexLine(line string, indent int) error {
 			l.emit(TokenIdentifier, line[start:i], l.scanner.line, col)
 			col += i - start
 		case line[i] == '"':
+			startCol := col
 			start := i + 1
 			i++ // consume opening quote
 
@@ -128,7 +133,7 @@ func (l *Lexer) lexLine(line string, indent int) error {
 			}
 
 			if i >= len(line) {
-				return fmt.Errorf("unterminated string at line %d", l.scanner.line)
+				return yaperror.NewUnterminatedStringError(l.filename, l.scanner.line, startCol)
 			}
 
 			value := line[start:i]
@@ -163,6 +168,10 @@ func isAlphaNum(c byte) bool {
 
 func isSpace(c byte) bool {
 	return c == ' '
+}
+
+func isTab(c byte) bool {
+	return c == '\t'
 }
 
 func countIndent(s string) int {

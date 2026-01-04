@@ -2,6 +2,7 @@ package parser_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/rlamalama/YAP/internal/frontend/parser"
@@ -15,7 +16,7 @@ func TestLexEmptyFile(t *testing.T) {
 	file := test_util.OpenTestFile(t, test_util.EmptyFileYAP, testFileDirPrefix)
 	defer file.Close()
 
-	lex := parser.NewLexer(file)
+	lex := parser.NewLexer(file, test_util.EmptyFileYAP)
 	tokens, err := lex.Lex()
 
 	// Expecting 0 tokens in an empty file
@@ -28,7 +29,7 @@ func TestLexOneLinePrintStatement(t *testing.T) {
 	file := test_util.OpenTestFile(t, test_util.OneLinePrintYAP, testFileDirPrefix)
 	defer file.Close()
 
-	lex := parser.NewLexer(file)
+	lex := parser.NewLexer(file, test_util.OneLinePrintYAP)
 	tokens, err := lex.Lex()
 
 	// Expecting 5 tokens in simple print file
@@ -65,7 +66,7 @@ func TestLexMultiLinePrintStatement(t *testing.T) {
 	file := test_util.OpenTestFile(t, test_util.MultiLinePrintYAP, testFileDirPrefix)
 	defer file.Close()
 
-	lex := parser.NewLexer(file)
+	lex := parser.NewLexer(file, test_util.MultiLinePrintYAP)
 	tokens, err := lex.Lex()
 
 	// Expecting 5 tokens in print file
@@ -97,7 +98,7 @@ func TestLexBasicSetIfStatement(t *testing.T) {
 	file := test_util.OpenTestFile(t, test_util.BasicSetIfYAP, testFileDirPrefix)
 	defer file.Close()
 
-	lex := parser.NewLexer(file)
+	lex := parser.NewLexer(file, test_util.BasicSetIfYAP)
 	tokens, err := lex.Lex()
 	for _, tok := range tokens {
 		fmt.Println(tok.Kind.String())
@@ -110,5 +111,12 @@ func TestLexBasicSetIfStatement(t *testing.T) {
 }
 
 func TestLexNoTabs(t *testing.T) {
-	t.Skip("TODO: Testing invalid no tab support")
+	file := test_util.OpenTestFile(t, test_util.NoTabCharYAP, testFileDirPrefix)
+	defer file.Close()
+
+	lex := parser.NewLexer(file, test_util.NoTabCharYAP)
+	_, err := lex.Lex()
+	assert.NotNil(t, err)
+	assert.True(t, strings.Contains(err.Error(), "tab"))
+
 }

@@ -1,8 +1,9 @@
 package parser
 
 import (
-	"fmt"
 	"os"
+
+	yaperror "github.com/rlamalama/YAP/internal/error"
 )
 
 type Parser struct {
@@ -36,13 +37,13 @@ func (p *Parser) next() *Token {
 func (p *Parser) expect(kind TokenKind) (*Token, error) {
 	tok := p.next()
 	if tok == nil {
-		return nil, fmt.Errorf("expected %v, no more tokens", kind)
+		return nil, yaperror.NewExpectedTokenError(p.filename, 0, 0, kind.String())
 	}
 
 	if tok.Kind != kind {
-		return tok, fmt.Errorf(
-			"expected %v, got %v at line %d",
-			kind, tok.Kind, tok.Line,
+		return tok, yaperror.NewUnexpectedTokenError(
+			p.filename, tok.Line, tok.Col,
+			tok.Kind.String(), kind.String(),
 		)
 	}
 	return tok, nil
@@ -55,7 +56,7 @@ func (p *Parser) Parse() (*Program, error) {
 	}
 	defer file.Close()
 
-	lexer := NewLexer(file)
+	lexer := NewLexer(file, p.filename)
 
 	p.tokens, err = lexer.Lex()
 	if err != nil {
@@ -104,10 +105,8 @@ func (p *Parser) parseStmt() (Stmt, error) {
 	case "print":
 		return p.parsePrint()
 	default:
-		return nil, fmt.Errorf(
-			"unknown statement %q at line %d",
-			key.Value,
-			key.Line,
+		return nil, yaperror.NewUnknownStatementError(
+			p.filename, key.Line, key.Col, key.Value,
 		)
 	}
 }
