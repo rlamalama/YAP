@@ -31,6 +31,7 @@ YAP uses a YAML-inspired syntax with indentation-based structure.
 | `NUMERICAL`  | Integer literals (`42`)                  |
 | `IDENTIFIER` | Variable names (`myVar`, `count`)        |
 | `OPERATOR`   | Arithmetic operators (`+`, `-`, `*`, `/`)|
+| `COMMENT`    | `//` starts a comment (ignored)          |
 | `INDENT`     | Increase in indentation                  |
 | `DEDENT`     | Decrease in indentation                  |
 
@@ -81,6 +82,20 @@ YAP uses a YAML-inspired syntax with indentation-based structure.
 | `<=`     | Less or equal       |
 | `==`     | Equal               |
 | `!=`     | Not equal           |
+
+#### Comments
+
+Comments start with `//` and continue to the end of the line. They can appear on their own line or at the end of a statement:
+
+```yaml
+// This is a full-line comment
+- print: "hello"  // This is an inline comment
+
+- set:
+  - x: 10
+  // - y: 5   <- This line is commented out
+  - z: 20
+```
 
 > 📖 See [GRAMMAR.md](GRAMMAR.md) for the complete language specification.
 
