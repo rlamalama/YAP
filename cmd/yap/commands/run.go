@@ -3,11 +3,14 @@ package commands
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/rlamalama/YAP/internal/backend/build"
 	"github.com/rlamalama/YAP/internal/backend/vm"
 	"github.com/rlamalama/YAP/internal/frontend/parser"
 )
+
+const FileExtYAP = ".yap"
 
 func RunCmd(args []string) {
 	// Accessing flags
@@ -16,6 +19,9 @@ func RunCmd(args []string) {
 	_, err := os.Stat(file)
 	if err != nil {
 		log.Fatalf("error finding file: %+v", err)
+	}
+	if !strings.HasSuffix(strings.ToLower(file), FileExtYAP) {
+		log.Fatalf("file %s must be a .yap or .YAP file", file)
 	}
 
 	parser := parser.NewParser(file)
