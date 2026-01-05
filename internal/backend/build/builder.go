@@ -27,34 +27,20 @@ func (b *Builder) Build(stmts []parser.Stmt) ([]ir.Instruction, error) {
 func (b *Builder) buildStmt(stmt parser.Stmt) error {
 	switch s := stmt.(type) {
 	case parser.PrintStmt:
-		switch v := s.Expr.(type) {
-		case *parser.StringLiteral:
-			b.instructions = append(b.instructions, ir.Instruction{
-				Op: ir.OpPrint,
-				Arg: ir.Operand{
-					Kind:  ir.OperandLiteral,
-					Value: v.Value,
-				},
-			})
+		b.instructions = append(b.instructions, ir.Instruction{
+			Op:   ir.OpPrint,
+			Expr: s.Expr,
+		})
 
-		case *parser.Identifier:
-			b.instructions = append(b.instructions, ir.Instruction{
-				Op: ir.OpPrint,
-				Arg: ir.Operand{
-					Kind:  ir.OperandIdentifier,
-					Value: v.Name,
-				},
-			})
-		}
 	case parser.SetStmt:
 		for _, assignment := range s.Assignment {
-
 			b.instructions = append(b.instructions, ir.Instruction{
 				Op: ir.OpSet,
 				Arg: ir.Operand{
 					Kind:  ir.OperandIdentifier,
-					Value: assignment.Name + "=" + assignment.Expr.String(),
+					Value: assignment.Name,
 				},
+				Expr: assignment.Expr,
 			})
 		}
 

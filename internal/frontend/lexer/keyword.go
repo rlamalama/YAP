@@ -5,11 +5,15 @@ type Keyword string
 const (
 	KeywordPrint = "print"
 	KeywordSet   = "set"
+	KeywordTrue  = "True"
+	KeywordFalse = "False"
 )
 
 var Keywords = []Keyword{
 	KeywordPrint,
 	KeywordSet,
+	KeywordTrue,
+	KeywordFalse,
 }
 
 func IsKeyword(s string) bool {

@@ -1,0 +1,7 @@
+- set: 
+  - x: 10 + 10 - 15
+  - y: x * 4 
+  - z: y / 5
+- print: x
+- print: y
+- print: "hello" + " " + "world!"

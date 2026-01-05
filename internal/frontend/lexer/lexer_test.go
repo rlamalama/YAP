@@ -159,5 +159,147 @@ func TestLexSetPrint(t *testing.T) {
 	for i, tok := range toks {
 		assert.Equal(t, expectedTok[i].Kind.String(), tok.Kind.String(), i)
 	}
-	// assert.True(t, strings.Contains(err.Error(), "tab"))
+}
+
+func TestLexSetPrintBinaryExp(t *testing.T) {
+	_ = `
+- set: 
+  - x: 10 + 10 - 15
+  - y: x * 4 
+  - z: y / 5
+- print: x
+- print: y
+- print: "hello" + " " + "world!"
+`
+	// Expected tokens for binary expressions:
+	// Line 1: - set: \n
+	// Line 2: - x: 10 + 10 - 15 \n
+	// Line 3: - y: x * 4 \n
+	// Line 4: - z: y / 5 \n
+	// Line 5: - print: x \n
+	// Line 6: - print: y \n
+	// Line 7: - print: "hello" + " " + "world!" \n
+
+	expectedTok := []lexer.Token{
+		// - set:
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordSet},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenNewline},
+		{Kind: lexer.TokenIndent},
+		// - x: 10 + 10 - 15
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenNumerical, Value: "10"},
+		{Kind: lexer.TokenOperator, Value: "+"},
+		{Kind: lexer.TokenNumerical, Value: "10"},
+		{Kind: lexer.TokenOperator, Value: "-"},
+		{Kind: lexer.TokenNumerical, Value: "15"},
+		{Kind: lexer.TokenNewline},
+		// - y: x * 4
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenIdentifier, Value: "y"},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenOperator, Value: "*"},
+		{Kind: lexer.TokenNumerical, Value: "4"},
+		{Kind: lexer.TokenNewline},
+		// - z: y / 5
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenIdentifier, Value: "z"},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenIdentifier, Value: "y"},
+		{Kind: lexer.TokenOperator, Value: "/"},
+		{Kind: lexer.TokenNumerical, Value: "5"},
+		{Kind: lexer.TokenNewline},
+		{Kind: lexer.TokenDedent},
+		// - print: x
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenNewline},
+		// - print: y
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenIdentifier, Value: "y"},
+		{Kind: lexer.TokenNewline},
+		// - print: "hello" + " " + "world!"
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenString, Value: "hello"},
+		{Kind: lexer.TokenOperator, Value: "+"},
+		{Kind: lexer.TokenString, Value: " "},
+		{Kind: lexer.TokenOperator, Value: "+"},
+		{Kind: lexer.TokenString, Value: "world!"},
+		{Kind: lexer.TokenNewline},
+	}
+
+	file := test_util.OpenTestFile(t, test_util.SetPrintBinaryExpYAP, testFileDirPrefix)
+	defer file.Close()
+
+	lex := lexer.NewLexer(file, test_util.SetPrintBinaryExpYAP)
+	toks, err := lex.Lex()
+	assert.Nil(t, err)
+	assert.Equal(t, len(expectedTok), len(toks), "token count mismatch")
+	for i, tok := range toks {
+		assert.Equal(t, expectedTok[i].Kind.String(), tok.Kind.String(), "token kind mismatch at %d", i)
+		if expectedTok[i].Value != "" {
+			assert.Equal(t, expectedTok[i].Value, tok.Value, "token value mismatch at %d", i)
+		}
+	}
+}
+
+func TestLexBooleanComparison(t *testing.T) {
+	file := test_util.OpenTestFile(t, test_util.BooleanComparisonYAP, testFileDirPrefix)
+	defer file.Close()
+
+	lex := lexer.NewLexer(file, test_util.BooleanComparisonYAP)
+	toks, err := lex.Lex()
+	assert.Nil(t, err)
+
+	// Verify specific tokens for comparison operators and booleans
+	// Find and verify key tokens: >, ==, <=, !=, >=, <, True, False
+
+	// Helper to find token by value
+	findToken := func(value string) bool {
+		for _, tok := range toks {
+			if tok.Value == value {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Verify comparison operators are correctly lexed
+	assert.True(t, findToken(">"), "should have > operator")
+	assert.True(t, findToken("=="), "should have == operator")
+	assert.True(t, findToken("<="), "should have <= operator")
+	assert.True(t, findToken("!="), "should have != operator")
+	assert.True(t, findToken(">="), "should have >= operator")
+	assert.True(t, findToken("<"), "should have < operator")
+
+	// Verify boolean keywords are correctly lexed
+	assert.True(t, findToken(lexer.KeywordTrue), "should have True keyword")
+	assert.True(t, findToken(lexer.KeywordFalse), "should have False keyword")
+
+	// Verify specific two-character operators are parsed correctly (not as two tokens)
+	// Check that we have the == operator as a single token
+	for _, tok := range toks {
+		if tok.Value == "==" {
+			assert.Equal(t, lexer.TokenOperator, tok.Kind, "== should be a single operator token")
+		}
+		if tok.Value == "!=" {
+			assert.Equal(t, lexer.TokenOperator, tok.Kind, "!= should be a single operator token")
+		}
+		if tok.Value == "<=" {
+			assert.Equal(t, lexer.TokenOperator, tok.Kind, "<= should be a single operator token")
+		}
+		if tok.Value == ">=" {
+			assert.Equal(t, lexer.TokenOperator, tok.Kind, ">= should be a single operator token")
+		}
+	}
 }

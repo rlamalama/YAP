@@ -512,6 +512,15 @@ func NewOutOfBoundsError(index, length int) *YapError {
 	}
 }
 
+func NewRuntimeError(msg string) *YapError {
+	return &YapError{
+		Code:     ErrInvalidType,
+		Severity: SeverityError,
+		Phase:    PhaseRuntime,
+		Message:  msg,
+	}
+}
+
 // Warning constructors
 
 func NewDeprecatedWarning(file string, line, col int, feature, alternative string) *YapError {

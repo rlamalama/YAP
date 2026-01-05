@@ -28,3 +28,26 @@ type Identifier struct {
 
 func (*Identifier) value()           {}
 func (i *Identifier) String() string { return i.Name }
+
+type BooleanLiteral struct {
+	Value bool
+}
+
+func (*BooleanLiteral) value() {}
+func (b *BooleanLiteral) String() string {
+	if b.Value {
+		return "True"
+	}
+	return "False"
+}
+
+type BinaryExpr struct {
+	Left     Value
+	Operator string
+	Right    Value
+}
+
+func (*BinaryExpr) value() {}
+func (b *BinaryExpr) String() string {
+	return fmt.Sprintf("(%s %s %s)", b.Left.String(), b.Operator, b.Right.String())
+}
