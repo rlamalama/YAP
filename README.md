@@ -8,6 +8,29 @@ Have you ever read YAML and thought to yourself - "I wish I could write my full 
 
 🚧 **Early Development** - YAP is in its infancy. 
 
+### Roadmap
+
+**Core Language:**
+- [x] Print statements
+- [x] Variables (set)
+- [x] String literals
+- [x] Numeric literals
+- [x] Boolean literals (`True`/`False`)
+- [x] Arithmetic operators (`+`, `-`, `*`, `/`)
+- [x] Comparison operators (`>`, `<`, `>=`, `<=`, `==`, `!=`)
+- [x] Comments (`//`)
+- [ ] Conditional statements (`if`/`else`)
+- [ ] Loops (`while`)
+- [ ] Functions (`function`/`call`)
+
+**Future:**
+- [ ] Lists/Arrays
+- [ ] Logical operators (`and`, `or`, `not`)
+- [ ] User input
+- [ ] Floating-point numbers
+- [ ] String operations (length, substring)
+- [ ] File I/O
+
 ### Language Overview
 
 YAP uses a YAML-inspired syntax with indentation-based structure.
