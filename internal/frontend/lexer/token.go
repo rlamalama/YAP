@@ -1,4 +1,4 @@
-package parser
+package lexer
 
 type TokenKind int
 
@@ -6,8 +6,10 @@ type TokenKind int
 const (
 	TokenDash TokenKind = iota
 	TokenIdentifier
+	TokenKeyword
 	TokenColon
-	TokenScalar
+	TokenString
+	TokenNumerical
 	TokenIndent
 	TokenDedent
 	TokenNewline
@@ -19,12 +21,14 @@ func (tk TokenKind) String() string {
 	names := [...]string{
 		"Dash",
 		"Identifer",
+		"Keyword",
 		"Colon",
-		"Scalar",
+		"String",
+		"Numerical",
 		"Indent",
-		"TokenDedent",
-		"TokenNewline",
-		"TokenEOF",
+		"Dedent",
+		"Newline",
+		"EOF",
 	}
 
 	if tk < TokenDash || tk > TokenEOF {

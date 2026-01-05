@@ -13,12 +13,34 @@ import (
 func TestVMPrint(t *testing.T) {
 	arg := "hi"
 	vm := vm.New([]ir.Instruction{
-		{Op: ir.OpPrint, Arg: arg},
+		{Op: ir.OpPrint, Arg: ir.Operand{
+			Kind:  ir.OperandLiteral,
+			Value: arg,
+		}},
 	})
 
 	output := test_util.CaptureStdout(t, func() {
+		require.Nil(t, vm.Run())
+	})
 
-		require.NoError(t, vm.Run())
+	assert.Equal(t, arg+"\n", output)
+}
+
+func TestVMSetAndPrint(t *testing.T) {
+	key, arg := "x", "hi"
+	vm := vm.New([]ir.Instruction{
+		{Op: ir.OpSet, Arg: ir.Operand{
+			Kind:  ir.OperandIdentifier,
+			Value: key + "=" + arg,
+		}},
+		{Op: ir.OpPrint, Arg: ir.Operand{
+			Kind:  ir.OperandIdentifier,
+			Value: key,
+		}},
+	})
+
+	output := test_util.CaptureStdout(t, func() {
+		require.Nil(t, vm.Run())
 	})
 
 	assert.Equal(t, arg+"\n", output)

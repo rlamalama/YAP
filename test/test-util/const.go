@@ -9,4 +9,5 @@ const (
 	MultiLinePrintYAP = "0002-multi-line-print.yap"
 	BasicSetIfYAP     = "0003-basic-set-if.yap"
 	NoTabCharYAP      = "0004-no-tab-char.yap"
+	SetPrintYAP       = "0005-set-print.yap"
 )

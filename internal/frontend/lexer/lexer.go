@@ -1,4 +1,4 @@
-package parser
+package lexer
 
 import (
 	"io"
@@ -15,7 +15,6 @@ type Lexer struct {
 }
 
 func NewLexer(r io.Reader, filename string) *Lexer {
-
 	return &Lexer{
 		filename:    filename,
 		scanner:     NewScanner(r),
@@ -104,10 +103,10 @@ func (l *Lexer) lexLine(line string, indent int) error {
 
 	for i < len(line) {
 		switch {
-
 		case isTab(line[i]):
 			return yaperror.NewTabCharError(l.filename, l.scanner.line, col)
 
+		// Whitespace is not considered a token and ignored
 		case isSpace(line[i]):
 			i++
 			col++
@@ -116,12 +115,19 @@ func (l *Lexer) lexLine(line string, indent int) error {
 			l.emit(TokenColon, ":", l.scanner.line, col)
 			i++
 			col++
+
+		// Keyword or Identifier
 		case isAlpha(line[i]):
 			start := i
 			for i < len(line) && isAlphaNum(line[i]) {
 				i++
 			}
-			l.emit(TokenIdentifier, line[start:i], l.scanner.line, col)
+			val := line[start:i]
+			tk := TokenIdentifier
+			if IsKeyword(val) {
+				tk = TokenKeyword
+			}
+			l.emit(tk, val, l.scanner.line, col)
 			col += i - start
 		case line[i] == '"':
 			startCol := col
@@ -137,14 +143,19 @@ func (l *Lexer) lexLine(line string, indent int) error {
 			}
 
 			value := line[start:i]
-			l.emit(TokenScalar, value, l.scanner.line, col)
+			l.emit(TokenString, value, l.scanner.line, col)
 
 			i++ // consume closing quote
 			col += (i - start) + 1
+		case isNum(line[i]):
+			start := i
+			for i < len(line) && isNum(line[i]) {
+				i++
+			}
+			l.emit(TokenNumerical, line[start:i], l.scanner.line, col)
+			col += i - start
 		default:
-			l.emit(TokenScalar, line[i:], l.scanner.line, col)
-			i = len(line)
-			col = i + 1
+			return yaperror.NewInvalidTokenError(l.filename, l.scanner.line, col)
 		}
 	}
 	l.emit(TokenNewline, "", l.scanner.line, col)
@@ -162,8 +173,12 @@ func isAlpha(c byte) bool {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_')
 }
 
+func isNum(c byte) bool {
+	return (c >= '0' && c <= '9')
+}
+
 func isAlphaNum(c byte) bool {
-	return isAlpha(c) || (c >= '0' && c <= '9')
+	return isAlpha(c) || isNum(c)
 }
 
 func isSpace(c byte) bool {

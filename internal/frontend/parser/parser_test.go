@@ -33,7 +33,7 @@ func TestParseOneLinePrintStatement(t *testing.T) {
 	stmt := prog.Statements[0]
 	assert.Equal(t, parser.StmtTypePrint, stmt.Type())
 	printStmt := stmt.(parser.PrintStmt)
-	assert.Equal(t, "hello world", printStmt.Value)
+	assert.Equal(t, "hello world", printStmt.Expr.String())
 }
 
 // 5 print statements

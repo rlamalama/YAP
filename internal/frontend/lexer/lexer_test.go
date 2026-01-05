@@ -1,11 +1,10 @@
-package parser_test
+package lexer_test
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
-	"github.com/rlamalama/YAP/internal/frontend/parser"
+	"github.com/rlamalama/YAP/internal/frontend/lexer"
 	test_util "github.com/rlamalama/YAP/test/test-util"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,7 +15,7 @@ func TestLexEmptyFile(t *testing.T) {
 	file := test_util.OpenTestFile(t, test_util.EmptyFileYAP, testFileDirPrefix)
 	defer file.Close()
 
-	lex := parser.NewLexer(file, test_util.EmptyFileYAP)
+	lex := lexer.NewLexer(file, test_util.EmptyFileYAP)
 	tokens, err := lex.Lex()
 
 	// Expecting 0 tokens in an empty file
@@ -29,33 +28,33 @@ func TestLexOneLinePrintStatement(t *testing.T) {
 	file := test_util.OpenTestFile(t, test_util.OneLinePrintYAP, testFileDirPrefix)
 	defer file.Close()
 
-	lex := parser.NewLexer(file, test_util.OneLinePrintYAP)
+	lex := lexer.NewLexer(file, test_util.OneLinePrintYAP)
 	tokens, err := lex.Lex()
 
 	// Expecting 5 tokens in simple print file
 	assert.Nil(t, err)
 	assert.Equal(t, 5, len(tokens))
-	assert.Equal(t, parser.TokenDash, tokens[0].Kind)
+	assert.Equal(t, lexer.TokenDash, tokens[0].Kind)
 	assert.Equal(t, "-", tokens[0].Value)
 	assert.Equal(t, 1, tokens[0].Col)
 	assert.Equal(t, 1, tokens[0].Line)
 
-	assert.Equal(t, parser.TokenIdentifier, tokens[1].Kind)
-	assert.Equal(t, "print", tokens[1].Value)
+	assert.Equal(t, lexer.TokenKeyword, tokens[1].Kind)
+	assert.Equal(t, lexer.KeywordPrint, tokens[1].Value)
 	assert.Equal(t, 3, tokens[1].Col)
 	assert.Equal(t, 1, tokens[1].Line)
 
-	assert.Equal(t, parser.TokenColon, tokens[2].Kind)
+	assert.Equal(t, lexer.TokenColon, tokens[2].Kind)
 	assert.Equal(t, ":", tokens[2].Value)
 	assert.Equal(t, 8, tokens[2].Col)
 	assert.Equal(t, 1, tokens[2].Line)
 
-	assert.Equal(t, parser.TokenScalar, tokens[3].Kind)
+	assert.Equal(t, lexer.TokenString, tokens[3].Kind)
 	assert.Equal(t, "hello world", tokens[3].Value)
 	assert.Equal(t, 10, tokens[3].Col)
 	assert.Equal(t, 1, tokens[3].Line)
 
-	assert.Equal(t, parser.TokenNewline, tokens[4].Kind)
+	assert.Equal(t, lexer.TokenNewline, tokens[4].Kind)
 	assert.Equal(t, "", tokens[4].Value)
 	assert.Equal(t, 23, tokens[4].Col)
 	assert.Equal(t, 1, tokens[4].Line)
@@ -66,7 +65,7 @@ func TestLexMultiLinePrintStatement(t *testing.T) {
 	file := test_util.OpenTestFile(t, test_util.MultiLinePrintYAP, testFileDirPrefix)
 	defer file.Close()
 
-	lex := parser.NewLexer(file, test_util.MultiLinePrintYAP)
+	lex := lexer.NewLexer(file, test_util.MultiLinePrintYAP)
 	tokens, err := lex.Lex()
 
 	// Expecting 5 tokens in print file
@@ -85,7 +84,7 @@ func TestLexBasicSetIfStatement(t *testing.T) {
 `
 	// Dash ID COLON NL (4)
 	// INDENT (1)
-	// ID COLON SCALAR NL (4)
+	// Dash ID COLON SCALAR NL (4)
 	// DEDENT (1)
 	// DASH ID COLON NL (4) good through here
 	// INDENT (1)
@@ -98,25 +97,67 @@ func TestLexBasicSetIfStatement(t *testing.T) {
 	file := test_util.OpenTestFile(t, test_util.BasicSetIfYAP, testFileDirPrefix)
 	defer file.Close()
 
-	lex := parser.NewLexer(file, test_util.BasicSetIfYAP)
+	lex := lexer.NewLexer(file, test_util.BasicSetIfYAP)
 	tokens, err := lex.Lex()
-	for _, tok := range tokens {
-		fmt.Println(tok.Kind.String())
-	}
-
-	// Expecting 5 tokens in print file
-
 	assert.Nil(t, err)
-	assert.Equal(t, 30, len(tokens))
+	assert.Equal(t, 31, len(tokens))
 }
 
 func TestLexNoTabs(t *testing.T) {
 	file := test_util.OpenTestFile(t, test_util.NoTabCharYAP, testFileDirPrefix)
 	defer file.Close()
 
-	lex := parser.NewLexer(file, test_util.NoTabCharYAP)
+	lex := lexer.NewLexer(file, test_util.NoTabCharYAP)
 	_, err := lex.Lex()
 	assert.NotNil(t, err)
 	assert.True(t, strings.Contains(err.Error(), "tab"))
+}
 
+func TestLexSetPrint(t *testing.T) {
+	_ = `
+- set:
+  - x: "5"
+  - y: 10
+- print: x 
+- print: y 
+`
+	expectedTok := []lexer.Token{
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenKeyword},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenNewline},
+		{Kind: lexer.TokenIndent},
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenIdentifier},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenString},
+		{Kind: lexer.TokenNewline},
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenIdentifier},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenNumerical},
+		{Kind: lexer.TokenNewline},
+		{Kind: lexer.TokenDedent},
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenKeyword},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenIdentifier},
+		{Kind: lexer.TokenNewline},
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenKeyword},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenIdentifier},
+		{Kind: lexer.TokenNewline},
+	}
+
+	file := test_util.OpenTestFile(t, test_util.SetPrintYAP, testFileDirPrefix)
+	defer file.Close()
+
+	lex := lexer.NewLexer(file, test_util.SetPrintYAP)
+	toks, err := lex.Lex()
+	assert.Nil(t, err)
+	for i, tok := range toks {
+		assert.Equal(t, expectedTok[i].Kind.String(), tok.Kind.String(), i)
+	}
+	// assert.True(t, strings.Contains(err.Error(), "tab"))
 }

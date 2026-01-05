@@ -67,6 +67,7 @@ const (
 	ErrInvalidEscapeSequence
 	ErrUnexpectedEOF
 	ErrInvalidNumber
+	ErrInvalidToken
 
 	// Parser errors (2000-2999)
 	ErrUnexpectedToken ErrorCode = 2000 + iota
@@ -382,6 +383,16 @@ func NewTabCharError(file string, line, col int) *YapError {
 	}
 }
 
+func NewInvalidTokenError(file string, line, col int) *YapError {
+	return &YapError{
+		Code:     ErrInvalidToken,
+		Severity: SeverityError,
+		Phase:    PhaseLexer,
+		Position: Position{File: file, Line: line, Column: col},
+		Message:  "invalid token",
+	}
+}
+
 // Parser error constructors
 
 func NewUnexpectedTokenError(file string, line, col int, got, expected string) *YapError {
@@ -446,6 +457,24 @@ func NewTypeMismatchError(file string, line, col int, expected, got string) *Yap
 }
 
 // Runtime error constructors
+
+func NewInvalidSetIR(val string) *YapError {
+	return &YapError{
+		Code:     ErrInvalidType,
+		Severity: SeverityError,
+		Phase:    PhaseRuntime,
+		Message:  fmt.Sprintf("invalid set: %s", val),
+	}
+}
+
+func NewUndefinedVariable(val string) *YapError {
+	return &YapError{
+		Code:     ErrUndefinedVariable,
+		Severity: SeverityError,
+		Phase:    PhaseRuntime,
+		Message:  fmt.Sprintf("undefined variable: %s", val),
+	}
+}
 
 func NewUnknownOpcodeError(opcode int) *YapError {
 	return &YapError{
