@@ -163,3 +163,80 @@ func TestBuildPrintBinaryExpr(t *testing.T) {
 	require.Equal(t, ir.OpPrint, irs[0].Op)
 	require.Equal(t, binExpr, irs[0].Expr)
 }
+
+func TestBuildBooleanLiteral(t *testing.T) {
+	// Test building: flag = True, print flag
+	boolExpr := &parser.BooleanLiteral{Value: true}
+	stmts := []parser.Stmt{
+		parser.SetStmt{
+			Assignment: []*parser.Assignment{
+				{
+					Name: "flag",
+					Expr: boolExpr,
+				},
+			},
+		},
+		parser.PrintStmt{
+			Expr: &parser.Identifier{Name: "flag"},
+		},
+	}
+
+	builder := build.New()
+	irs, err := builder.Build(stmts)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(irs))
+
+	require.Equal(t, ir.OpSet, irs[0].Op)
+	require.Equal(t, "flag", irs[0].Arg.Value)
+	require.Equal(t, boolExpr, irs[0].Expr)
+
+	require.Equal(t, ir.OpPrint, irs[1].Op)
+}
+
+func TestBuildComparisonExpr(t *testing.T) {
+	// Test building: isGreater = a > b
+	compExpr := &parser.BinaryExpr{
+		Left:     &parser.Identifier{Name: "a"},
+		Operator: ">",
+		Right:    &parser.Identifier{Name: "b"},
+	}
+	stmts := []parser.Stmt{
+		parser.SetStmt{
+			Assignment: []*parser.Assignment{
+				{
+					Name: "isGreater",
+					Expr: compExpr,
+				},
+			},
+		},
+	}
+
+	builder := build.New()
+	irs, err := builder.Build(stmts)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(irs))
+
+	require.Equal(t, ir.OpSet, irs[0].Op)
+	require.Equal(t, "isGreater", irs[0].Arg.Value)
+	require.Equal(t, compExpr, irs[0].Expr)
+}
+
+func TestBuildPrintComparisonExpr(t *testing.T) {
+	// Test building: print a >= 10
+	compExpr := &parser.BinaryExpr{
+		Left:     &parser.Identifier{Name: "a"},
+		Operator: ">=",
+		Right:    &parser.NumericLiteral{Value: 10},
+	}
+	stmts := []parser.Stmt{
+		parser.PrintStmt{Expr: compExpr},
+	}
+
+	builder := build.New()
+	irs, err := builder.Build(stmts)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(irs))
+
+	require.Equal(t, ir.OpPrint, irs[0].Op)
+	require.Equal(t, compExpr, irs[0].Expr)
+}

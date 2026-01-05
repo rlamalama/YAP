@@ -252,3 +252,54 @@ func TestLexSetPrintBinaryExp(t *testing.T) {
 		}
 	}
 }
+
+func TestLexBooleanComparison(t *testing.T) {
+	file := test_util.OpenTestFile(t, test_util.BooleanComparisonYAP, testFileDirPrefix)
+	defer file.Close()
+
+	lex := lexer.NewLexer(file, test_util.BooleanComparisonYAP)
+	toks, err := lex.Lex()
+	assert.Nil(t, err)
+
+	// Verify specific tokens for comparison operators and booleans
+	// Find and verify key tokens: >, ==, <=, !=, >=, <, True, False
+
+	// Helper to find token by value
+	findToken := func(value string) bool {
+		for _, tok := range toks {
+			if tok.Value == value {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Verify comparison operators are correctly lexed
+	assert.True(t, findToken(">"), "should have > operator")
+	assert.True(t, findToken("=="), "should have == operator")
+	assert.True(t, findToken("<="), "should have <= operator")
+	assert.True(t, findToken("!="), "should have != operator")
+	assert.True(t, findToken(">="), "should have >= operator")
+	assert.True(t, findToken("<"), "should have < operator")
+
+	// Verify boolean keywords are correctly lexed
+	assert.True(t, findToken(lexer.KeywordTrue), "should have True keyword")
+	assert.True(t, findToken(lexer.KeywordFalse), "should have False keyword")
+
+	// Verify specific two-character operators are parsed correctly (not as two tokens)
+	// Check that we have the == operator as a single token
+	for _, tok := range toks {
+		if tok.Value == "==" {
+			assert.Equal(t, lexer.TokenOperator, tok.Kind, "== should be a single operator token")
+		}
+		if tok.Value == "!=" {
+			assert.Equal(t, lexer.TokenOperator, tok.Kind, "!= should be a single operator token")
+		}
+		if tok.Value == "<=" {
+			assert.Equal(t, lexer.TokenOperator, tok.Kind, "<= should be a single operator token")
+		}
+		if tok.Value == ">=" {
+			assert.Equal(t, lexer.TokenOperator, tok.Kind, ">= should be a single operator token")
+		}
+	}
+}

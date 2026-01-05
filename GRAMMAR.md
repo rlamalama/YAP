@@ -26,6 +26,7 @@ YAP source files are read as UTF-8 encoded text.
 | underscore (`_`)           | Start of identifier                  |
 | digit (`0-9`)              | Numeric literal                      |
 | `+`, `-`, `*`, `/`         | `OPERATOR` token (arithmetic)        |
+| `>`, `<`, `>=`, `<=`, `==`, `!=` | `OPERATOR` token (comparison)  |
 | end of file                | `EOF` token                          |
 
 ---
@@ -71,9 +72,9 @@ The YAP lexer produces the following token types:
 |----------------|--------------------------------------------------|
 | `DASH`         | The `-` character, starts a statement            |
 | `IDENTIFIER`   | A name (variable, field name)                    |
-| `KEYWORD`      | A reserved word (`print`, `set`)                 |
+| `KEYWORD`      | A reserved word (`print`, `set`, `True`, `False`)|
 | `COLON`        | The `:` character                                |
-| `OPERATOR`     | Arithmetic operators (`+`, `-`, `*`, `/`)        |
+| `OPERATOR`     | Arithmetic and comparison operators              |
 | `STRING`       | A string literal enclosed in double quotes       |
 | `NUMERICAL`    | An integer literal                               |
 | `INDENT`       | Increase in indentation level                    |
@@ -91,11 +92,13 @@ Keywords are reserved identifiers with special meaning. They cannot be used as v
 |----------|------------------------------------|
 | `print`  | Output a value to the console      |
 | `set`    | Assign values to variables         |
+| `True`   | Boolean literal (true)             |
+| `False`  | Boolean literal (false)            |
 
 Formally:
 
 ```
-keyword: "print" | "set"
+keyword: "print" | "set" | "True" | "False"
 ```
 
 ---
@@ -135,7 +138,7 @@ my-var      (contains hyphen)
 
 ## 6. Literals
 
-YAP supports two types of literals: string literals and numeric literals.
+YAP supports three types of literals: string literals, numeric literals, and boolean literals.
 
 ### 6.1. String Literals
 
@@ -176,6 +179,23 @@ digit:           "0"..."9"
 
 **Note**: Floating-point numbers and negative numbers are not yet supported.
 
+### 6.3. Boolean Literals
+
+Boolean literals represent truth values.
+
+```
+boolean_literal: "True" | "False"
+```
+
+#### Examples
+
+```yaml
+True
+False
+```
+
+**Note**: Boolean literals are case-sensitive. `true` and `false` (lowercase) are not valid boolean literals.
+
 ---
 
 ## 7. Operators and Delimiters
@@ -200,11 +220,26 @@ Arithmetic operators are used in expressions to perform calculations.
 | `*`    | Multiplication | Multiplies two numbers               |
 | `/`    | Division       | Divides left operand by right (integer division) |
 
+### 7.3. Comparison Operators
+
+Comparison operators compare two values and return a boolean result (`True` or `False`).
+
+| Symbol | Name                  | Description                          |
+|--------|-----------------------|--------------------------------------|
+| `>`    | Greater than          | True if left > right                 |
+| `<`    | Less than             | True if left < right                 |
+| `>=`   | Greater than or equal | True if left >= right                |
+| `<=`   | Less than or equal    | True if left <= right                |
+| `==`   | Equal                 | True if left equals right            |
+| `!=`   | Not equal             | True if left does not equal right    |
+
 ```
-operator: "+" | "-" | "*" | "/"
+arithmetic_operator: "+" | "-" | "*" | "/"
+comparison_operator: ">" | "<" | ">=" | "<=" | "==" | "!="
+operator: arithmetic_operator | comparison_operator
 ```
 
-**Note**: Operators are evaluated left-to-right with no precedence rules currently. All arithmetic operators have equal precedence.
+**Note**: Operators are evaluated left-to-right with no precedence rules currently. All operators have equal precedence.
 
 ---
 
@@ -256,6 +291,8 @@ print_body:     expression
 - print: 5 + 10
 - print: x * 2
 - print: "hello" + " " + "world"
+- print: True
+- print: 5 > 3
 ```
 
 ### 8.4. Set Statement
@@ -289,6 +326,8 @@ assignment:     DASH IDENTIFIER COLON expression NEWLINE
   - sum: 10 + 20
   - doubled: x * 2
   - greeting: "Hello" + " " + "World"
+  - isValid: True
+  - isGreater: x > 5
 ```
 
 ### 8.5. Expressions
@@ -301,6 +340,7 @@ expression:     value (OPERATOR value)*
 value:          STRING
               | NUMERICAL
               | IDENTIFIER
+              | BOOLEAN
 ```
 
 #### Binary Expressions
@@ -313,6 +353,22 @@ Binary expressions combine two values with an operator:
 4 * 5           # Numeric multiplication: 20
 20 / 4          # Numeric division: 5
 "hello" + " " + "world"   # String concatenation: "hello world"
+```
+
+#### Comparison Expressions
+
+Comparison expressions compare values and return booleans:
+
+```yaml
+5 > 3           # True
+10 < 5          # False
+5 >= 5          # True
+3 <= 2          # False
+5 == 5          # True
+5 != 3          # True
+"abc" == "abc"  # True
+"abc" != "xyz"  # True
+True == True    # True
 ```
 
 #### Chained Expressions
@@ -349,12 +405,14 @@ expression      ::= value (OPERATOR value)*
 value           ::= STRING
                   | NUMERICAL
                   | IDENTIFIER
+                  | BOOLEAN
 
 STRING          ::= '"' <characters> '"'
 NUMERICAL       ::= digit+
 IDENTIFIER      ::= letter (letter | digit)*
-KEYWORD         ::= "print" | "set"
-OPERATOR        ::= "+" | "-" | "*" | "/"
+BOOLEAN         ::= "True" | "False"
+KEYWORD         ::= "print" | "set" | "True" | "False"
+OPERATOR        ::= "+" | "-" | "*" | "/" | ">" | "<" | ">=" | "<=" | "==" | "!="
 
 letter          ::= "a"..."z" | "A"..."Z" | "_"
 digit           ::= "0"..."9"
@@ -421,6 +479,31 @@ EOF
 4. Print `x` → `5`
 5. Print `y` → `20`
 6. Print `x * z` → `5 * 4` → `20`
+
+### 10.3. Boolean and Comparison Example
+
+```yaml
+- set:
+  - a: 10
+  - b: 5
+  - isGreater: a > b
+  - isEqual: a == b
+  - flag: True
+
+- print: isGreater
+- print: isEqual
+- print: flag
+- print: a >= 10
+```
+
+#### Output
+
+```
+true
+false
+true
+true
+```
 
 ---
 

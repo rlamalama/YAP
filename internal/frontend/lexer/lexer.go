@@ -156,17 +156,18 @@ func (l *Lexer) lexLine(line string, indent int) error {
 			col += i - start
 
 		case StartsWithOperator(line[i]):
-			if IsArithmeticOperator(line[i]) {
-				l.emit(TokenOperator, string(line[i]), l.scanner.line, col)
-			} else {
-				if i < len(line)-1 && IsComparisonOperator(line[i:i+1]) {
-					l.emit(TokenOperator, line[i:i+1], l.scanner.line, col)
-					i++ // consume both
-					col++
-				} else {
-					l.emit(TokenOperator, string(line[i]), l.scanner.line, col)
+			// Check for two-character comparison operators first
+			if i < len(line)-1 {
+				twoChar := line[i : i+2]
+				if IsComparisonOperator(twoChar) {
+					l.emit(TokenOperator, twoChar, l.scanner.line, col)
+					i += 2
+					col += 2
+					continue
 				}
 			}
+			// Single character operator (arithmetic or single-char comparison)
+			l.emit(TokenOperator, string(line[i]), l.scanner.line, col)
 			i++
 			col++
 		default:

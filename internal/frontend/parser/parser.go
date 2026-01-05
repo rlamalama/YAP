@@ -134,6 +134,23 @@ func (p *Parser) parseValue() (Value, error) {
 		}
 		return &NumericLiteral{Value: num}, nil
 
+	case lexer.TokenKeyword:
+		tok := p.peek()
+		// Handle boolean literals
+		if tok.Value == lexer.KeywordTrue {
+			p.next()
+			return &BooleanLiteral{Value: true}, nil
+		}
+		if tok.Value == lexer.KeywordFalse {
+			p.next()
+			return &BooleanLiteral{Value: false}, nil
+		}
+		return nil, fmt.Errorf(
+			"unexpected keyword %q at line %d, expected value",
+			tok.Value,
+			tok.Line,
+		)
+
 	default:
 		tok := p.peek()
 		return nil, fmt.Errorf(

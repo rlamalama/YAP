@@ -27,7 +27,16 @@ const (
 )
 
 func StartsWithOperator(c byte) bool {
-	return IsArithmeticOperator(c) || IsComparisonOperator(string(c))
+	return IsArithmeticOperator(c) || StartsComparisonOperator(c)
+}
+
+func StartsComparisonOperator(c byte) bool {
+	switch c {
+	case '>', '<', '=', '!':
+		return true
+	default:
+		return false
+	}
 }
 
 func IsComparisonOperator(c string) bool {

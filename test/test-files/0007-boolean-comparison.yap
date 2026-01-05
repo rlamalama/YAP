@@ -1,0 +1,18 @@
+- set:
+  - a: 10
+  - b: 5
+  - isGreater: a > b
+  - isEqual: a == b
+  - isLessOrEqual: b <= a
+  - notEqual: a != b
+  - flag: True
+  - notFlag: False
+- print: isGreater
+- print: isEqual
+- print: isLessOrEqual
+- print: notEqual
+- print: flag
+- print: notFlag
+- print: a >= 10
+- print: b < 3
+

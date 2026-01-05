@@ -18,6 +18,8 @@ YAP uses a YAML-inspired syntax with indentation-based structure.
 |---------|-------------------------------|
 | `print` | Output a value to the console |
 | `set`   | Assign values to variables    |
+| `True`  | Boolean literal (true)        |
+| `False` | Boolean literal (false)       |
 
 #### Tokens
 
@@ -42,6 +44,8 @@ YAP uses a YAML-inspired syntax with indentation-based structure.
 - print: myVariable
 - print: 5 + 10
 - print: x * 2
+- print: True
+- print: x > 5
 ```
 
 **Set** — Assign variables (supports expressions):
@@ -52,9 +56,13 @@ YAP uses a YAML-inspired syntax with indentation-based structure.
   - count: 100
   - total: 10 + 20
   - doubled: count * 2
+  - isValid: True
+  - isGreater: count > 50
 ```
 
 #### Operators
+
+**Arithmetic:**
 
 | Operator | Description                              |
 |----------|------------------------------------------|
@@ -62,6 +70,17 @@ YAP uses a YAML-inspired syntax with indentation-based structure.
 | `-`      | Subtraction                              |
 | `*`      | Multiplication                           |
 | `/`      | Division (integer)                       |
+
+**Comparison:**
+
+| Operator | Description         |
+|----------|---------------------|
+| `>`      | Greater than        |
+| `<`      | Less than           |
+| `>=`     | Greater or equal    |
+| `<=`     | Less or equal       |
+| `==`     | Equal               |
+| `!=`     | Not equal           |
 
 > 📖 See [GRAMMAR.md](GRAMMAR.md) for the complete language specification.
 
@@ -140,6 +159,37 @@ Output:
 5
 20
 20
+```
+
+#### Booleans and Comparisons Example
+
+Create a file called `compare.yap`:
+
+```yaml
+- set:
+  - a: 10
+  - b: 5
+  - isGreater: a > b
+  - isEqual: a == b
+
+- print: isGreater
+- print: isEqual
+- print: True
+- print: a >= 10
+```
+
+Run it:
+
+```bash
+yap run compare.yap
+```
+
+Output:
+```
+true
+false
+true
+true
 ```
 
 ### License

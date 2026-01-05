@@ -52,6 +52,9 @@ func (vm *VM) evaluate(expr interface{}) (interface{}, *yaperror.YapError) {
 	case *parser.StringLiteral:
 		return v.Value, nil
 
+	case *parser.BooleanLiteral:
+		return v.Value, nil
+
 	case *parser.Identifier:
 		val, ok := vm.env[v.Name]
 		if !ok {
@@ -69,12 +72,13 @@ func (vm *VM) evaluate(expr interface{}) (interface{}, *yaperror.YapError) {
 			return nil, err
 		}
 
-		// Handle numeric operations
+		// Handle numeric operations and comparisons
 		leftInt, leftIsInt := left.(int)
 		rightInt, rightIsInt := right.(int)
 
 		if leftIsInt && rightIsInt {
 			switch v.Operator {
+			// Arithmetic operators
 			case lexer.ArithmeticAdditionOperator.String():
 				return leftInt + rightInt, nil
 			case lexer.ArithmeticSubtractionOperator.String():
@@ -86,15 +90,57 @@ func (vm *VM) evaluate(expr interface{}) (interface{}, *yaperror.YapError) {
 					return nil, yaperror.NewRuntimeError("division by zero")
 				}
 				return leftInt / rightInt, nil
+			// Comparison operators for integers
+			case lexer.ComparisonGtOperator.String():
+				return leftInt > rightInt, nil
+			case lexer.ComparisonLtOperator.String():
+				return leftInt < rightInt, nil
+			case lexer.ComparisonGteOperator.String():
+				return leftInt >= rightInt, nil
+			case lexer.ComparisonLteOperator.String():
+				return leftInt <= rightInt, nil
+			case lexer.ComparisonEqOperator.String():
+				return leftInt == rightInt, nil
+			case lexer.ComparisonNeOperator.String():
+				return leftInt != rightInt, nil
 			}
 		}
 
-		// Handle string concatenation
+		// Handle string operations
 		leftStr, leftIsStr := left.(string)
 		rightStr, rightIsStr := right.(string)
 
-		if leftIsStr && rightIsStr && v.Operator == lexer.ArithmeticAdditionOperator.String() {
-			return leftStr + rightStr, nil
+		if leftIsStr && rightIsStr {
+			switch v.Operator {
+			case lexer.ArithmeticAdditionOperator.String():
+				return leftStr + rightStr, nil
+			// Comparison operators for strings
+			case lexer.ComparisonEqOperator.String():
+				return leftStr == rightStr, nil
+			case lexer.ComparisonNeOperator.String():
+				return leftStr != rightStr, nil
+			case lexer.ComparisonGtOperator.String():
+				return leftStr > rightStr, nil
+			case lexer.ComparisonLtOperator.String():
+				return leftStr < rightStr, nil
+			case lexer.ComparisonGteOperator.String():
+				return leftStr >= rightStr, nil
+			case lexer.ComparisonLteOperator.String():
+				return leftStr <= rightStr, nil
+			}
+		}
+
+		// Handle boolean operations
+		leftBool, leftIsBool := left.(bool)
+		rightBool, rightIsBool := right.(bool)
+
+		if leftIsBool && rightIsBool {
+			switch v.Operator {
+			case lexer.ComparisonEqOperator.String():
+				return leftBool == rightBool, nil
+			case lexer.ComparisonNeOperator.String():
+				return leftBool != rightBool, nil
+			}
 		}
 
 		return nil, yaperror.NewRuntimeError(fmt.Sprintf("unsupported operation: %T %s %T", left, v.Operator, right))

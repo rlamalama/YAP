@@ -11,4 +11,5 @@ const (
 	NoTabCharYAP         = "0004-no-tab-char.yap"
 	SetPrintYAP          = "0005-set-print.yap"
 	SetPrintBinaryExpYAP = "0006-set-print-binary-exp.yap"
+	BooleanComparisonYAP = "0007-boolean-comparison.yap"
 )
