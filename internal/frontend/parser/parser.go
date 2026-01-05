@@ -144,20 +144,42 @@ func (p *Parser) parseValue() (Value, error) {
 	}
 }
 
-// TODO: Update to print ientifieres too
 func (p *Parser) parsePrint() (Stmt, error) {
-	expr, err := p.parseValue()
+	expr, err := p.parseExpr()
 	if err != nil {
 		return nil, err
 	}
 
-	if p.peek().Kind == lexer.TokenNewline {
-		p.next()
+	if _, err := p.expect(lexer.TokenNewline); err != nil {
+		return nil, err
 	}
 
 	return PrintStmt{
 		Expr: expr,
 	}, nil
+}
+
+func (p *Parser) parseExpr() (Value, error) {
+	left, err := p.parseValue()
+	if err != nil {
+		return nil, err
+	}
+
+	// Check for binary operators
+	for p.peek().Kind == lexer.TokenOperator {
+		opTok := p.next()
+		right, err := p.parseValue()
+		if err != nil {
+			return nil, err
+		}
+		left = &BinaryExpr{
+			Left:     left,
+			Operator: opTok.Value,
+			Right:    right,
+		}
+	}
+
+	return left, nil
 }
 
 func (p *Parser) parseSet() (Stmt, error) {
@@ -189,7 +211,7 @@ func (p *Parser) parseSet() (Stmt, error) {
 				return nil, err
 			}
 
-			expr, err := p.parseValue()
+			expr, err := p.parseExpr()
 			if err != nil {
 				return nil, err
 			}

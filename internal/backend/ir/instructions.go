@@ -8,6 +8,7 @@ const (
 )
 
 type Instruction struct {
-	Op  OpCode
-	Arg Operand
+	Op   OpCode
+	Arg  Operand
+	Expr interface{} // Holds parser.Value for expression evaluation
 }

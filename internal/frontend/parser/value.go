@@ -28,3 +28,14 @@ type Identifier struct {
 
 func (*Identifier) value()           {}
 func (i *Identifier) String() string { return i.Name }
+
+type BinaryExpr struct {
+	Left     Value
+	Operator string
+	Right    Value
+}
+
+func (*BinaryExpr) value() {}
+func (b *BinaryExpr) String() string {
+	return fmt.Sprintf("(%s %s %s)", b.Left.String(), b.Operator, b.Right.String())
+}

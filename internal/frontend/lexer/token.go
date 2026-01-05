@@ -8,6 +8,7 @@ const (
 	TokenIdentifier
 	TokenKeyword
 	TokenColon
+	TokenOperator
 	TokenString
 	TokenNumerical
 	TokenIndent
@@ -23,6 +24,7 @@ func (tk TokenKind) String() string {
 		"Identifer",
 		"Keyword",
 		"Colon",
+		"Operator",
 		"String",
 		"Numerical",
 		"Indent",

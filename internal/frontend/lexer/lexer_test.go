@@ -159,5 +159,96 @@ func TestLexSetPrint(t *testing.T) {
 	for i, tok := range toks {
 		assert.Equal(t, expectedTok[i].Kind.String(), tok.Kind.String(), i)
 	}
-	// assert.True(t, strings.Contains(err.Error(), "tab"))
+}
+
+func TestLexSetPrintBinaryExp(t *testing.T) {
+	_ = `
+- set: 
+  - x: 10 + 10 - 15
+  - y: x * 4 
+  - z: y / 5
+- print: x
+- print: y
+- print: "hello" + " " + "world!"
+`
+	// Expected tokens for binary expressions:
+	// Line 1: - set: \n
+	// Line 2: - x: 10 + 10 - 15 \n
+	// Line 3: - y: x * 4 \n
+	// Line 4: - z: y / 5 \n
+	// Line 5: - print: x \n
+	// Line 6: - print: y \n
+	// Line 7: - print: "hello" + " " + "world!" \n
+
+	expectedTok := []lexer.Token{
+		// - set:
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordSet},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenNewline},
+		{Kind: lexer.TokenIndent},
+		// - x: 10 + 10 - 15
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenNumerical, Value: "10"},
+		{Kind: lexer.TokenOperator, Value: "+"},
+		{Kind: lexer.TokenNumerical, Value: "10"},
+		{Kind: lexer.TokenOperator, Value: "-"},
+		{Kind: lexer.TokenNumerical, Value: "15"},
+		{Kind: lexer.TokenNewline},
+		// - y: x * 4
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenIdentifier, Value: "y"},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenOperator, Value: "*"},
+		{Kind: lexer.TokenNumerical, Value: "4"},
+		{Kind: lexer.TokenNewline},
+		// - z: y / 5
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenIdentifier, Value: "z"},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenIdentifier, Value: "y"},
+		{Kind: lexer.TokenOperator, Value: "/"},
+		{Kind: lexer.TokenNumerical, Value: "5"},
+		{Kind: lexer.TokenNewline},
+		{Kind: lexer.TokenDedent},
+		// - print: x
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenNewline},
+		// - print: y
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenIdentifier, Value: "y"},
+		{Kind: lexer.TokenNewline},
+		// - print: "hello" + " " + "world!"
+		{Kind: lexer.TokenDash},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon},
+		{Kind: lexer.TokenString, Value: "hello"},
+		{Kind: lexer.TokenOperator, Value: "+"},
+		{Kind: lexer.TokenString, Value: " "},
+		{Kind: lexer.TokenOperator, Value: "+"},
+		{Kind: lexer.TokenString, Value: "world!"},
+		{Kind: lexer.TokenNewline},
+	}
+
+	file := test_util.OpenTestFile(t, test_util.SetPrintBinaryExpYAP, testFileDirPrefix)
+	defer file.Close()
+
+	lex := lexer.NewLexer(file, test_util.SetPrintBinaryExpYAP)
+	toks, err := lex.Lex()
+	assert.Nil(t, err)
+	assert.Equal(t, len(expectedTok), len(toks), "token count mismatch")
+	for i, tok := range toks {
+		assert.Equal(t, expectedTok[i].Kind.String(), tok.Kind.String(), "token kind mismatch at %d", i)
+		if expectedTok[i].Value != "" {
+			assert.Equal(t, expectedTok[i].Value, tok.Value, "token value mismatch at %d", i)
+		}
+	}
 }

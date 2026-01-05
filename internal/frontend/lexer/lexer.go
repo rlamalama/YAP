@@ -154,6 +154,21 @@ func (l *Lexer) lexLine(line string, indent int) error {
 			}
 			l.emit(TokenNumerical, line[start:i], l.scanner.line, col)
 			col += i - start
+
+		case StartsWithOperator(line[i]):
+			if IsArithmeticOperator(line[i]) {
+				l.emit(TokenOperator, string(line[i]), l.scanner.line, col)
+			} else {
+				if i < len(line)-1 && IsComparisonOperator(line[i:i+1]) {
+					l.emit(TokenOperator, line[i:i+1], l.scanner.line, col)
+					i++ // consume both
+					col++
+				} else {
+					l.emit(TokenOperator, string(line[i]), l.scanner.line, col)
+				}
+			}
+			i++
+			col++
 		default:
 			return yaperror.NewInvalidTokenError(l.filename, l.scanner.line, col)
 		}

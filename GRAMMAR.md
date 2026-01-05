@@ -25,6 +25,7 @@ YAP source files are read as UTF-8 encoded text.
 | letter (`a-z`, `A-Z`)      | Start of identifier or keyword       |
 | underscore (`_`)           | Start of identifier                  |
 | digit (`0-9`)              | Numeric literal                      |
+| `+`, `-`, `*`, `/`         | `OPERATOR` token (arithmetic)        |
 | end of file                | `EOF` token                          |
 
 ---
@@ -72,6 +73,7 @@ The YAP lexer produces the following token types:
 | `IDENTIFIER`   | A name (variable, field name)                    |
 | `KEYWORD`      | A reserved word (`print`, `set`)                 |
 | `COLON`        | The `:` character                                |
+| `OPERATOR`     | Arithmetic operators (`+`, `-`, `*`, `/`)        |
 | `STRING`       | A string literal enclosed in double quotes       |
 | `NUMERICAL`    | An integer literal                               |
 | `INDENT`       | Increase in indentation level                    |
@@ -178,12 +180,31 @@ digit:           "0"..."9"
 
 ## 7. Operators and Delimiters
 
-YAP uses a minimal set of operators and delimiters:
+YAP uses the following operators and delimiters:
 
-| Symbol | Name   | Usage                                |
-|--------|--------|--------------------------------------|
-| `-`    | Dash   | Statement prefix                     |
+### 7.1. Delimiters
+
+| Symbol | Name   | Usage                                    |
+|--------|--------|------------------------------------------|
+| `-`    | Dash   | Statement prefix                         |
 | `:`    | Colon  | Separator between keyword/name and value |
+
+### 7.2. Arithmetic Operators
+
+Arithmetic operators are used in expressions to perform calculations.
+
+| Symbol | Name           | Description                          |
+|--------|----------------|--------------------------------------|
+| `+`    | Addition       | Adds two numbers or concatenates strings |
+| `-`    | Subtraction    | Subtracts right operand from left    |
+| `*`    | Multiplication | Multiplies two numbers               |
+| `/`    | Division       | Divides left operand by right (integer division) |
+
+```
+operator: "+" | "-" | "*" | "/"
+```
+
+**Note**: Operators are evaluated left-to-right with no precedence rules currently. All arithmetic operators have equal precedence.
 
 ---
 
@@ -214,16 +235,16 @@ statement_body: print_body
 
 ### 8.3. Print Statement
 
-The `print` statement outputs a value.
+The `print` statement outputs the result of an expression.
 
 ```
-print_body:     value
+print_body:     expression
 ```
 
 #### Syntax
 
 ```yaml
-- print: <value>
+- print: <expression>
 ```
 
 #### Examples
@@ -232,24 +253,27 @@ print_body:     value
 - print: "hello world"
 - print: 42
 - print: myVariable
+- print: 5 + 10
+- print: x * 2
+- print: "hello" + " " + "world"
 ```
 
 ### 8.4. Set Statement
 
-The `set` statement assigns values to one or more variables.
+The `set` statement assigns the result of expressions to one or more variables.
 
 ```
 set_body:       NEWLINE INDENT assignment+ DEDENT
 
-assignment:     DASH IDENTIFIER COLON value NEWLINE
+assignment:     DASH IDENTIFIER COLON expression NEWLINE
 ```
 
 #### Syntax
 
 ```yaml
 - set:
-  - <identifier>: <value>
-  - <identifier>: <value>
+  - <identifier>: <expression>
+  - <identifier>: <expression>
   ...
 ```
 
@@ -260,17 +284,47 @@ assignment:     DASH IDENTIFIER COLON value NEWLINE
   - x: 5
   - name: "Alice"
   - count: 100
+
+- set:
+  - sum: 10 + 20
+  - doubled: x * 2
+  - greeting: "Hello" + " " + "World"
 ```
 
-### 8.5. Values
+### 8.5. Expressions
 
-A value can be a string literal, numeric literal, or identifier (variable reference).
+An expression produces a value. Expressions can be simple values or binary operations.
 
 ```
+expression:     value (OPERATOR value)*
+
 value:          STRING
               | NUMERICAL
               | IDENTIFIER
 ```
+
+#### Binary Expressions
+
+Binary expressions combine two values with an operator:
+
+```yaml
+5 + 10          # Numeric addition: 15
+10 - 3          # Numeric subtraction: 7
+4 * 5           # Numeric multiplication: 20
+20 / 4          # Numeric division: 5
+"hello" + " " + "world"   # String concatenation: "hello world"
+```
+
+#### Chained Expressions
+
+Multiple operators can be chained. They are evaluated left-to-right:
+
+```yaml
+10 + 5 - 3      # ((10 + 5) - 3) = 12
+2 * 3 + 4       # ((2 * 3) + 4) = 10
+```
+
+**Note**: There is currently no operator precedence — all operators are evaluated left-to-right.
 
 ---
 
@@ -284,11 +338,13 @@ statement       ::= DASH KEYWORD COLON statement_body NEWLINE
 statement_body  ::= print_body
                   | set_body
 
-print_body      ::= value
+print_body      ::= expression
 
 set_body        ::= NEWLINE INDENT assignment+ DEDENT
 
-assignment      ::= DASH IDENTIFIER COLON value NEWLINE
+assignment      ::= DASH IDENTIFIER COLON expression NEWLINE
+
+expression      ::= value (OPERATOR value)*
 
 value           ::= STRING
                   | NUMERICAL
@@ -298,6 +354,7 @@ STRING          ::= '"' <characters> '"'
 NUMERICAL       ::= digit+
 IDENTIFIER      ::= letter (letter | digit)*
 KEYWORD         ::= "print" | "set"
+OPERATOR        ::= "+" | "-" | "*" | "/"
 
 letter          ::= "a"..."z" | "A"..."Z" | "_"
 digit           ::= "0"..."9"
@@ -305,7 +362,9 @@ digit           ::= "0"..."9"
 
 ---
 
-## 10. Example Program
+## 10. Example Programs
+
+### 10.1. Basic Example
 
 ```yaml
 - set:
@@ -317,7 +376,7 @@ digit           ::= "0"..."9"
 - print: "Done!"
 ```
 
-### Token Stream
+#### Token Stream
 
 The above program produces the following token stream:
 
@@ -333,11 +392,41 @@ DASH KEYWORD("print") COLON STRING("Done!") NEWLINE
 EOF
 ```
 
+### 10.2. Expressions Example
+
+```yaml
+- set:
+  - x: 10 + 10 - 15
+  - y: x * 4
+  - z: y / 5
+
+- print: x
+- print: y
+- print: x * z
+```
+
+#### Output
+
+```
+5
+20
+20
+```
+
+#### Explanation
+
+1. `x` is set to `10 + 10 - 15` = `5`
+2. `y` is set to `x * 4` = `5 * 4` = `20`
+3. `z` is set to `y / 5` = `20 / 5` = `4`
+4. Print `x` → `5`
+5. Print `y` → `20`
+6. Print `x * z` → `5 * 4` → `20`
+
 ---
 
 ## 11. Errors
 
-The lexer and parser will report errors for:
+The lexer, parser, and runtime will report errors for:
 
 | Error Type              | Description                                       |
 |-------------------------|---------------------------------------------------|
@@ -347,6 +436,9 @@ The lexer and parser will report errors for:
 | Invalid token           | Unrecognized character in source                  |
 | Unexpected token        | Token not expected at current position            |
 | Unknown statement       | Keyword not recognized                            |
+| Undefined variable      | Variable used before being defined                |
+| Division by zero        | Attempt to divide by zero                         |
+| Type mismatch           | Incompatible types in binary operation            |
 
 ---
 
