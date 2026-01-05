@@ -8,14 +8,48 @@ Have you ever read YAML and thought to yourself - "I wish I could write my full 
 
 🚧 **Early Development** - YAP is in its infancy. 
 
-### Currently Supported
+### Language Overview
 
-- **Print statement**: Output text to the console
-(multiple lines NOT supported)
+YAP uses a YAML-inspired syntax with indentation-based structure.
+
+#### Keywords
+
+| Keyword | Description                   |
+|---------|-------------------------------|
+| `print` | Output a value to the console |
+| `set`   | Assign values to variables    |
+
+#### Tokens
+
+| Token        | Description                              |
+|--------------|------------------------------------------|
+| `DASH`       | `-` starts a statement                   |
+| `COLON`      | `:` separates keyword/name from value    |
+| `STRING`     | Text in double quotes (`"hello"`)        |
+| `NUMERICAL`  | Integer literals (`42`)                  |
+| `IDENTIFIER` | Variable names (`myVar`, `count`)        |
+| `INDENT`     | Increase in indentation                  |
+| `DEDENT`     | Decrease in indentation                  |
+
+#### Statements
+
+**Print** — Output a value:
 
 ```yaml
 - print: "hello world"
+- print: 42
+- print: myVariable
 ```
+
+**Set** — Assign variables:
+
+```yaml
+- set:
+  - name: "Alice"
+  - count: 100
+```
+
+> 📖 See [GRAMMAR.md](GRAMMAR.md) for the complete language specification.
 
 ### Building
 
@@ -42,7 +76,13 @@ make test
 Create a file called `hello.yap`:
 
 ```yaml
-- print: "hello world"
+- set:
+  - greeting: "Hello, YAP!"
+  - count: 3
+
+- print: greeting
+- print: count
+- print: "Done!"
 ```
 
 Then run it:
@@ -53,7 +93,9 @@ yap run hello.yap
 
 Output:
 ```
-hello world
+Hello, YAP!
+3
+Done!
 ```
 
 ### License

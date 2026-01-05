@@ -10,9 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const TestFileDir = "test/test-files"
-const TestFiles = "test-files"
-
 // openTestFile caller should defer file.Close()
 func OpenTestFile(t *testing.T, testFile string, prefix string) *os.File {
 	filepath := GetTestFilepath(testFile, prefix)
@@ -24,7 +21,7 @@ func OpenTestFile(t *testing.T, testFile string, prefix string) *os.File {
 
 // openTestFile caller should defer file.Close()
 func GetTestFilepath(testFile string, prefix string) string {
-	return filepath.Join(prefix, TestFileDir, testFile)
+	return filepath.Join(prefix, TestDir, TestFilesDir, testFile)
 }
 
 func CaptureStdout(t *testing.T, fn func()) string {

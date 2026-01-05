@@ -9,14 +9,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOneLinePrint(t *testing.T) {
-	filepath := filepath.Join(test_util.TestFilesDir, test_util.OneLinePrintYAP)
+func TestSetPrint(t *testing.T) {
+	filepath := filepath.Join(test_util.TestFilesDir, test_util.SetPrintYAP)
 	args := []string{filepath}
 
 	output := test_util.CaptureStdout(t, func() {
 		commands.RunCmd(args)
 	})
 
-	expected := "hello world\n"
+	expected :=
+		`5
+10
+`
 	assert.Equal(t, expected, output)
 }

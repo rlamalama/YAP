@@ -3,47 +3,50 @@ package parser
 import (
 	"fmt"
 	"os"
+	"strconv"
+
+	yaperror "github.com/rlamalama/YAP/internal/error"
+	"github.com/rlamalama/YAP/internal/frontend/lexer"
 )
 
 type Parser struct {
 	filename string
-	tokens   []*Token
+	tokens   []*lexer.Token
 	pos      int
 }
 
 func NewParser(file string) *Parser {
 	return &Parser{
 		filename: file,
-		tokens:   []*Token{},
+		tokens:   []*lexer.Token{},
 		pos:      0,
 	}
 }
 
-func (p *Parser) peek() *Token {
+func (p *Parser) peek() *lexer.Token {
 	if p.pos >= len(p.tokens) {
-		return &Token{Kind: TokenEOF}
+		return &lexer.Token{Kind: lexer.TokenEOF}
 
 	}
 	return p.tokens[p.pos]
 }
 
-func (p *Parser) next() (*Token, bool) {
+func (p *Parser) next() *lexer.Token {
 	tok := p.peek()
 	p.pos++
-	end := tok.Kind == TokenEOF
-	return tok, end
+	return tok
 }
 
-func (p *Parser) expect(kind TokenKind) (*Token, error) {
-	tok, _ := p.next()
+func (p *Parser) expect(kind lexer.TokenKind) (*lexer.Token, error) {
+	tok := p.next()
 	if tok == nil {
-		return nil, fmt.Errorf("expected %v, no more tokens", kind)
+		return nil, yaperror.NewExpectedTokenError(p.filename, 0, 0, kind.String())
 	}
 
 	if tok.Kind != kind {
-		return tok, fmt.Errorf(
-			"expected %v, got %v at line %d",
-			kind, tok.Kind, tok.Line,
+		return tok, yaperror.NewUnexpectedTokenError(
+			p.filename, tok.Line, tok.Col,
+			tok.Kind.String(), kind.String(),
 		)
 	}
 	return tok, nil
@@ -56,7 +59,7 @@ func (p *Parser) Parse() (*Program, error) {
 	}
 	defer file.Close()
 
-	lexer := NewLexer(file)
+	lexer := lexer.NewLexer(file, p.filename)
 
 	p.tokens, err = lexer.Lex()
 	if err != nil {
@@ -74,55 +77,147 @@ func (p *Parser) parseProgram() (*Program, error) {
 	}
 
 	stmts := []Stmt{}
+	for p.peek().Kind != lexer.TokenEOF {
 
-	stmt, err := p.parseStmt()
-	if err != nil {
-		return nil, err
+		stmt, err := p.parseStmt()
+		if err != nil {
+			return nil, err
+		}
+		stmts = append(stmts, stmt)
 	}
-	stmts = append(stmts, stmt)
 
 	prog.Statements = stmts
 	return prog, nil
 }
 
 func (p *Parser) parseStmt() (Stmt, error) {
-	if _, err := p.expect(TokenDash); err != nil {
+	if _, err := p.expect(lexer.TokenDash); err != nil {
 		return nil, err
 	}
 
-	key, err := p.expect(TokenIdentifier)
+	key, err := p.expect(lexer.TokenKeyword)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := p.expect(TokenColon); err != nil {
+	if _, err := p.expect(lexer.TokenColon); err != nil {
 		return nil, err
 	}
 
 	switch key.Value {
-	case "print":
+	case lexer.KeywordPrint:
 		return p.parsePrint()
+	case lexer.KeywordSet:
+		return p.parseSet()
 	default:
-		return nil, fmt.Errorf(
-			"unknown statement %q at line %d",
-			key.Value,
-			key.Line,
+		return nil, yaperror.NewUnknownStatementError(
+			p.filename, key.Line, key.Col, key.Value,
 		)
 	}
 }
 
+func (p *Parser) parseValue() (Value, error) {
+	switch p.peek().Kind {
+	case lexer.TokenIdentifier:
+		tok := p.next()
+		return &Identifier{Name: tok.Value}, nil
+
+	case lexer.TokenString:
+		tok := p.next()
+		return &StringLiteral{Value: tok.Value}, nil
+
+	case lexer.TokenNumerical:
+		tok := p.next()
+		num, err := strconv.Atoi(tok.Value)
+		if err != nil {
+			return nil, err
+		}
+		return &NumericLiteral{Value: num}, nil
+
+	default:
+		tok := p.peek()
+		return nil, fmt.Errorf(
+			"expected value, got %v at line %d",
+			tok.Kind,
+			tok.Line,
+		)
+	}
+}
+
+// TODO: Update to print ientifieres too
 func (p *Parser) parsePrint() (Stmt, error) {
-	val, err := p.expect(TokenScalar)
+	expr, err := p.parseValue()
 	if err != nil {
 		return nil, err
 	}
 
-	// Optional: consume newline if present
-	if p.peek().Kind == TokenEOL {
+	if p.peek().Kind == lexer.TokenNewline {
 		p.next()
 	}
 
 	return PrintStmt{
-		Value: val.Value,
+		Expr: expr,
 	}, nil
+}
+
+func (p *Parser) parseSet() (Stmt, error) {
+	val := p.next()
+	switch val.Kind {
+	case lexer.TokenNewline:
+
+		_, err := p.expect(lexer.TokenIndent)
+		if err != nil {
+			return nil, err
+		}
+
+		assignments := []*Assignment{}
+		for p.peek().Kind != lexer.TokenDedent {
+
+			// Start of sets STMT
+			_, err = p.expect(lexer.TokenDash)
+			if err != nil {
+				return nil, err
+			}
+
+			key, err := p.expect(lexer.TokenIdentifier)
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = p.expect(lexer.TokenColon)
+			if err != nil {
+				return nil, err
+			}
+
+			expr, err := p.parseValue()
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = p.expect(lexer.TokenNewline)
+			if err != nil {
+				return nil, err
+			}
+			assignments = append(assignments, &Assignment{
+				Name: key.Value,
+				Expr: expr,
+			})
+		}
+
+		// END OF STMT
+		_, err = p.expect(lexer.TokenDedent)
+		if err != nil {
+			return nil, err
+		}
+
+		return SetStmt{
+			Assignment: assignments,
+		}, nil
+
+	default:
+		return nil, yaperror.NewUnexpectedTokenError(
+			p.filename, val.Line, val.Col,
+			val.Kind.String(), fmt.Sprintf("%s or", lexer.TokenNewline.String()),
+		)
+	}
 }
