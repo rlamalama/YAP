@@ -518,3 +518,28 @@ func TestVMStringComparison(t *testing.T) {
 
 	assert.Equal(t, "true\n", output)
 }
+
+func TestVMUndefinedVariableError(t *testing.T) {
+	// Simulates the scenario from 0008-comments-ignore-in-block.yap:
+	// - set:
+	//   - x: 10
+	//     // - y: 5  (commented out, y is not defined)
+	// - print: x
+	// - print: y  (should error because y is undefined)
+	v := vm.New([]ir.Instruction{
+		{
+			Op:   ir.OpSet,
+			Arg:  ir.Operand{Kind: ir.OperandIdentifier, Value: "x"},
+			Expr: &parser.NumericLiteral{Value: 10},
+		},
+		// y is NOT set (simulating it being commented out)
+		{Op: ir.OpPrint, Expr: &parser.Identifier{Name: "x"}},
+		{Op: ir.OpPrint, Expr: &parser.Identifier{Name: "y"}}, // y is undefined
+	})
+
+	err := v.Run()
+
+	// Should error because y is undefined
+	assert.NotNil(t, err, "should error because y is undefined")
+	assert.Contains(t, err.Error(), "y", "error should mention undefined variable y")
+}

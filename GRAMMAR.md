@@ -27,6 +27,7 @@ YAP source files are read as UTF-8 encoded text.
 | digit (`0-9`)              | Numeric literal                      |
 | `+`, `-`, `*`, `/`         | `OPERATOR` token (arithmetic)        |
 | `>`, `<`, `>=`, `<=`, `==`, `!=` | `OPERATOR` token (comparison)  |
+| `//`                       | Comment start (rest of line ignored) |
 | end of file                | `EOF` token                          |
 
 ---
@@ -45,7 +46,30 @@ A physical line is a sequence of characters terminated by:
 
 Blank lines (lines containing only whitespace) are ignored by the lexer.
 
-### 2.3. Indentation
+### 2.3. Comments
+
+Comments begin with `//` and extend to the end of the line. They can appear:
+- At the beginning of a line (full-line comment)
+- After a statement on the same line (inline comment)
+- Inside indented blocks
+
+```yaml
+// This is a full-line comment
+- print: "hello"  // This is an inline comment
+
+- set:
+  - x: 10
+  // - y: 5   <- This assignment is commented out
+  - z: 20
+```
+
+Comments are tokenized as `COMMENT` tokens followed by `NEWLINE`, then discarded by the parser. Everything after `//` until the end of the line is ignored.
+
+```
+comment: "//" <any characters until newline>
+```
+
+### 2.4. Indentation
 
 Indentation determines block structure. The lexer tracks indentation levels using a stack:
 
@@ -58,7 +82,7 @@ Indentation determines block structure. The lexer tracks indentation levels usin
 indentation: SPACE*
 ```
 
-### 2.4. Whitespace Between Tokens
+### 2.5. Whitespace Between Tokens
 
 Spaces between tokens on the same line are ignored (except for indentation at the start of a line).
 
@@ -77,6 +101,7 @@ The YAP lexer produces the following token types:
 | `OPERATOR`     | Arithmetic and comparison operators              |
 | `STRING`       | A string literal enclosed in double quotes       |
 | `NUMERICAL`    | An integer literal                               |
+| `COMMENT`      | A comment starting with `//`                     |
 | `INDENT`       | Increase in indentation level                    |
 | `DEDENT`       | Decrease in indentation level                    |
 | `NEWLINE`      | End of a logical line                            |
@@ -413,6 +438,7 @@ IDENTIFIER      ::= letter (letter | digit)*
 BOOLEAN         ::= "True" | "False"
 KEYWORD         ::= "print" | "set" | "True" | "False"
 OPERATOR        ::= "+" | "-" | "*" | "/" | ">" | "<" | ">=" | "<=" | "==" | "!="
+COMMENT         ::= "//" <any characters until newline>
 
 letter          ::= "a"..."z" | "A"..."Z" | "_"
 digit           ::= "0"..."9"
@@ -504,6 +530,35 @@ false
 true
 true
 ```
+
+### 10.4. Comments Example
+
+```yaml
+// Initialize variables
+- set:
+  - x: 10
+  // - y: 5   <- commented out, y is not defined
+  - z: 20
+
+- print: x      // prints 10
+- print: z      // prints 20
+// - print: y   <- would error if uncommented (y undefined)
+```
+
+#### Output
+
+```
+10
+20
+```
+
+#### Explanation
+
+1. The first line is a full-line comment, ignored
+2. Inside the set block, `- y: 5` is commented out, so `y` is never defined
+3. `x` and `z` are set normally
+4. The inline comments after print statements are ignored
+5. The last line is commented out entirely
 
 ---
 

@@ -303,3 +303,148 @@ func TestLexBooleanComparison(t *testing.T) {
 		}
 	}
 }
+
+// Test file content:
+// - print: "hello"
+// //print: "hello"
+// // print: "hello"
+// - print: "hello" // world
+func TestLexCommentsIgnored(t *testing.T) {
+	file := test_util.OpenTestFile(t, test_util.CommentsIgnoredYAP, testFileDirPrefix)
+	defer file.Close()
+
+	lex := lexer.NewLexer(file, test_util.CommentsIgnoredYAP)
+	toks, err := lex.Lex()
+	assert.Nil(t, err)
+
+	// Expected tokens for the comments test file:
+	// Line 1: - print: "hello" \n (5 tokens: Dash, Keyword, Colon, String, Newline)
+	// Line 2: //print: "hello" -> completely ignored, only newline emitted (1 token: Newline)
+	// Line 3: // print: "hello" -> completely ignored, only newline emitted (1 token: Newline)
+	// Line 4: - print: "hello" // world -> (5 tokens: Dash, Keyword, Colon, String, Newline)
+	// Total: 12 tokens
+
+	expectedTok := []lexer.Token{
+		// Line 1: - print: "hello"
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenString, Value: "hello"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 2: //print: "hello" - full line comment, only newline
+		{Kind: lexer.TokenComment, Value: ""},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 3: // print: "hello" - full line comment, only newline
+		{Kind: lexer.TokenComment, Value: ""},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 4: - print: "hello" // world
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenString, Value: "hello"},
+		{Kind: lexer.TokenComment, Value: ""},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 5: - s- set:
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordSet},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		//   - x: 10
+		{Kind: lexer.TokenIndent, Value: ""},
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenNumerical, Value: "10"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		//   - y: 5
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenIdentifier, Value: "y"},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenNumerical, Value: "5"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// - print: x // + y
+		{Kind: lexer.TokenDedent, Value: ""},
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenComment, Value: ""},
+		{Kind: lexer.TokenNewline, Value: ""},
+	}
+
+	assert.Equal(t, len(expectedTok), len(toks), "token count mismatch")
+	for i, tok := range toks {
+		assert.Equal(t, expectedTok[i].Kind.String(), tok.Kind.String(), "token kind mismatch at %d", i)
+		if expectedTok[i].Value != "" {
+			assert.Equal(t, expectedTok[i].Value, tok.Value, "token value mismatch at %d", i)
+		}
+	}
+
+	// Verify that no comment content appears as tokens
+	for _, tok := range toks {
+		assert.NotEqual(t, "world", tok.Value, "comment content 'world' should not appear as a token")
+		assert.NotContains(t, tok.Value, "//", "comment marker should not appear in any token value")
+	}
+}
+
+// Test file content:
+// - set:
+//   - x: 10
+//     // - y: 5
+//
+// - print: x
+// - print: y
+func TestLexCommentsIgnoreInBlock(t *testing.T) {
+	file := test_util.OpenTestFile(t, test_util.CommentsIgnoreInBlockYAP, testFileDirPrefix)
+	defer file.Close()
+
+	lex := lexer.NewLexer(file, test_util.CommentsIgnoreInBlockYAP)
+	toks, err := lex.Lex()
+	assert.Nil(t, err)
+
+	// Expected tokens:
+	// Line 1: - set: \n
+	// Line 2: INDENT - x: 10 \n
+	// Line 3: // - y: 5 -> Comment, Newline
+	// Line 4: DEDENT - print: x \n
+	// Line 5: - print: y \n
+
+	expectedTok := []lexer.Token{
+		// Line 1: - set:
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordSet},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 2: - x: 10 (indented)
+		{Kind: lexer.TokenIndent, Value: ""},
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenNumerical, Value: "10"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 3: // - y: 5 (comment line inside block)
+		{Kind: lexer.TokenComment, Value: ""},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 4: - print: x (dedented)
+		{Kind: lexer.TokenDedent, Value: ""},
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 5: - print: y
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenIdentifier, Value: "y"},
+		{Kind: lexer.TokenNewline, Value: ""},
+	}
+
+	assert.Equal(t, len(expectedTok), len(toks), "token count mismatch")
+	for i, tok := range toks {
+		assert.Equal(t, expectedTok[i].Kind.String(), tok.Kind.String(), "token kind mismatch at %d", i)
+		if expectedTok[i].Value != "" {
+			assert.Equal(t, expectedTok[i].Value, tok.Value, "token value mismatch at %d", i)
+		}
+	}
+}

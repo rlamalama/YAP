@@ -95,13 +95,15 @@ func (l *Lexer) lexLine(line string, indent int) error {
 	i := indent
 	col := indent + 1
 
-	if line[i] == '-' {
+	if isDash(line[i]) {
 		l.emit(TokenDash, "-", l.scanner.line, col)
 		i++
 		col++
 	}
 
+lineLoop:
 	for i < len(line) {
+
 		switch {
 		case isTab(line[i]):
 			return yaperror.NewTabCharError(l.filename, l.scanner.line, col)
@@ -111,7 +113,7 @@ func (l *Lexer) lexLine(line string, indent int) error {
 			i++
 			col++
 
-		case line[i] == ':':
+		case isColon(line[i]):
 			l.emit(TokenColon, ":", l.scanner.line, col)
 			i++
 			col++
@@ -129,12 +131,13 @@ func (l *Lexer) lexLine(line string, indent int) error {
 			}
 			l.emit(tk, val, l.scanner.line, col)
 			col += i - start
-		case line[i] == '"':
+
+		case isQuote(line[i]):
 			startCol := col
 			start := i + 1
 			i++ // consume opening quote
 
-			for i < len(line) && line[i] != '"' {
+			for i < len(line) && !isQuote(line[i]) {
 				i++
 			}
 
@@ -154,7 +157,9 @@ func (l *Lexer) lexLine(line string, indent int) error {
 			}
 			l.emit(TokenNumerical, line[start:i], l.scanner.line, col)
 			col += i - start
-
+		case isComment(line[i]) && i < len(line)-1 && isComment(line[i+1]):
+			l.emit(TokenComment, "", l.scanner.line, col)
+			break lineLoop
 		case StartsWithOperator(line[i]):
 			// Check for two-character comparison operators first
 			if i < len(line)-1 {
@@ -214,8 +219,22 @@ func countIndent(s string) int {
 }
 
 func isBlank(s string) bool {
-	if strings.TrimSpace(s) == "" {
-		return true
-	}
-	return false
+	return strings.TrimSpace(s) == ""
+}
+
+func isDash(c byte) bool {
+	return c == '-'
+}
+
+func isColon(c byte) bool {
+	return c == ':'
+}
+
+func isQuote(c byte) bool {
+	return c == '"'
+}
+
+// Comment is //
+func isComment(c byte) bool {
+	return c == '/'
 }
