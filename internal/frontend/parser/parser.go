@@ -78,6 +78,19 @@ func (p *Parser) parseProgram() (*Program, error) {
 
 	stmts := []Stmt{}
 	for p.peek().Kind != lexer.TokenEOF {
+		if p.peek().Kind == lexer.TokenComment {
+			// pop comment token and the following new line
+			_, err := p.expect(lexer.TokenComment)
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = p.expect(lexer.TokenNewline)
+			if err != nil {
+				return nil, err
+			}
+			continue
+		}
 
 		stmt, err := p.parseStmt()
 		if err != nil {
@@ -117,6 +130,11 @@ func (p *Parser) parseStmt() (Stmt, error) {
 }
 
 func (p *Parser) parseValue() (Value, error) {
+	// Skip any comment tokens (but not newlines - those are structural)
+	for p.peek().Kind == lexer.TokenComment {
+		p.next() // consume comment only
+	}
+
 	switch p.peek().Kind {
 	case lexer.TokenIdentifier:
 		tok := p.next()
@@ -167,6 +185,11 @@ func (p *Parser) parsePrint() (Stmt, error) {
 		return nil, err
 	}
 
+	// Skip any trailing comment before newline
+	for p.peek().Kind == lexer.TokenComment {
+		p.next() // consume comment only
+	}
+
 	if _, err := p.expect(lexer.TokenNewline); err != nil {
 		return nil, err
 	}
@@ -185,6 +208,12 @@ func (p *Parser) parseExpr() (Value, error) {
 	// Check for binary operators
 	for p.peek().Kind == lexer.TokenOperator {
 		opTok := p.next()
+
+		// Skip any comment tokens after operator (but not newlines - those are structural)
+		for p.peek().Kind == lexer.TokenComment {
+			p.next() // consume comment only
+		}
+
 		right, err := p.parseValue()
 		if err != nil {
 			return nil, err
@@ -211,6 +240,18 @@ func (p *Parser) parseSet() (Stmt, error) {
 
 		assignments := []*Assignment{}
 		for p.peek().Kind != lexer.TokenDedent {
+			// Skip any comment lines within the set block
+			for p.peek().Kind == lexer.TokenComment {
+				p.next() // consume comment
+				if p.peek().Kind == lexer.TokenNewline {
+					p.next() // consume newline after comment
+				}
+			}
+
+			// Check again after skipping comments
+			if p.peek().Kind == lexer.TokenDedent {
+				break
+			}
 
 			// Start of sets STMT
 			_, err = p.expect(lexer.TokenDash)

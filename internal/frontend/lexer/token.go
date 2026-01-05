@@ -14,6 +14,7 @@ const (
 	TokenIndent
 	TokenDedent
 	TokenNewline
+	TokenComment
 	TokenEOF
 )
 
@@ -30,6 +31,7 @@ func (tk TokenKind) String() string {
 		"Indent",
 		"Dedent",
 		"Newline",
+		"Comment",
 		"EOF",
 	}
 

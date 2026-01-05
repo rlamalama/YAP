@@ -155,3 +155,84 @@ func TestParseBooleanComparison(t *testing.T) {
 	assert.True(t, ok, "print expression should be BinaryExpr")
 	assert.Equal(t, ">=", gteExpr.Operator)
 }
+
+// Test parsing comments are ignored
+// Test file content:
+// - print: "hello"
+// //print: "hello"
+// // print: "hello"
+// - print: "hello" // world
+func TestParseCommentsIgnored(t *testing.T) {
+	p := parser.NewParser(test_util.GetTestFilepath(test_util.CommentsIgnoredYAP, testFileDir))
+	prog, err := p.Parse()
+
+	assert.Nil(t, err)
+	assert.NotNil(t, prog)
+	// Lines 2 and 3 are comment-only lines
+	assert.Equal(t, 4, len(prog.Statements))
+
+	// First statement: - print: "hello"
+	stmt1 := prog.Statements[0]
+	assert.Equal(t, parser.StmtTypePrint, stmt1.Type())
+	printStmt1 := stmt1.(parser.PrintStmt)
+	strLit1, ok := printStmt1.Expr.(*parser.StringLiteral)
+	assert.True(t, ok, "first print expression should be StringLiteral")
+	assert.Equal(t, "hello", strLit1.Value)
+
+	// Second statement: - print: "hello" // world
+	// The "// world" comment should be ignored
+	stmt2 := prog.Statements[1]
+	assert.Equal(t, parser.StmtTypePrint, stmt2.Type())
+	printStmt2 := stmt2.(parser.PrintStmt)
+	strLit2, ok := printStmt2.Expr.(*parser.StringLiteral)
+	assert.True(t, ok, "second print expression should be StringLiteral")
+	assert.Equal(t, "hello", strLit2.Value)
+
+	// set stmt simple
+	stmt3 := prog.Statements[2]
+	assert.Equal(t, parser.StmtTypeSet, stmt3.Type())
+
+	// - print: x // + y
+	stmt4 := prog.Statements[3]
+	assert.Equal(t, parser.StmtTypePrint, stmt4.Type())
+	printStmt3 := stmt4.(parser.PrintStmt)
+	strLit3, ok := printStmt3.Expr.(*parser.Identifier)
+
+	assert.True(t, ok, "second print expression should be StringLiteral")
+	assert.Equal(t, "x", strLit3.Name)
+}
+
+// Test parsing comments inside a set block causes y to be undefined
+// Test file content:
+// - set:
+//   - x: 10
+//     // - y: 5
+//
+// - print: x
+// - print: y
+func TestParseCommentsIgnoreInBlock(t *testing.T) {
+	p := parser.NewParser(test_util.GetTestFilepath(test_util.CommentsIgnoreInBlockYAP, testFileDir))
+	prog, err := p.Parse()
+
+	assert.Nil(t, err)
+	assert.NotNil(t, prog)
+	// 1 set statement + 2 print statements = 3 statements
+	assert.Equal(t, 3, len(prog.Statements))
+
+	// First statement should be a set with only 1 assignment (y is commented out)
+	setStmt := prog.Statements[0].(parser.SetStmt)
+	assert.Equal(t, 1, len(setStmt.Assignment), "only x should be assigned, y is commented out")
+	assert.Equal(t, "x", setStmt.Assignment[0].Name)
+
+	// Second statement: - print: x
+	stmt2 := prog.Statements[1].(parser.PrintStmt)
+	xIdent, ok := stmt2.Expr.(*parser.Identifier)
+	assert.True(t, ok)
+	assert.Equal(t, "x", xIdent.Name)
+
+	// Third statement: - print: y (y is referenced but not defined)
+	stmt3 := prog.Statements[2].(parser.PrintStmt)
+	yIdent, ok := stmt3.Expr.(*parser.Identifier)
+	assert.True(t, ok)
+	assert.Equal(t, "y", yIdent.Name)
+}
