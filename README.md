@@ -8,6 +8,26 @@ Have you ever read YAML and thought to yourself - "I wish I could write my full 
 
 🚧 **Early Development** - YAP is in its infancy. 
 
+### Building
+
+```bash
+# Build for your local machine
+make build-local
+
+# Build for Linux (amd64)
+make build
+
+# Run tests
+make test
+```
+
+### Running
+
+```bash
+# Run a .yap file
+./bin/yap run yourfile.yap
+```
+
 ### Roadmap
 
 **Core Language:**
@@ -121,26 +141,6 @@ Comments start with `//` and continue to the end of the line. They can appear on
 ```
 
 > 📖 See [GRAMMAR.md](GRAMMAR.md) for the complete language specification.
-
-### Building
-
-```bash
-# Build for your local machine
-make build-local
-
-# Build for Linux (amd64)
-make build
-
-# Run tests
-make test
-```
-
-### Running
-
-```bash
-# Run a .yap file
-./bin/yap run yourfile.yap
-```
 
 ### Examples
 
