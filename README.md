@@ -1,14 +1,18 @@
-## YAP (YAML as Programming)
+# YAP (YAML as Programming)
 
 Have you ever read YAML and thought to yourself - "I wish I could write my full code in that sick markdown language."?
 
 **Well, now you can!**
 
-### Status
+---
 
-🚧 **Early Development** - YAP is in its infancy. 
+## Status
 
-### Building
+🚧 **Early Development** - YAP is in its infancy.
+
+---
+
+## Building
 
 ```bash
 # Build for your local machine
@@ -21,25 +25,29 @@ make build
 make test
 ```
 
-### Running
+---
+
+## Running
 
 ```bash
 # Run a .yap file
 ./bin/yap run yourfile.yap
 ```
 
-### Roadmap
+---
+
+## Roadmap
 
 **Core Language:**
 - [x] Print statements
-- [x] Variables (set)
+- [x] Variables (`set`)
 - [x] String literals
 - [x] Numeric literals
 - [x] Boolean literals (`True`/`False`)
 - [x] Arithmetic operators (`+`, `-`, `*`, `/`)
 - [x] Comparison operators (`>`, `<`, `>=`, `<=`, `==`, `!=`)
 - [x] Comments (`//`)
-- [ ] Conditional statements (`if`/`else`)
+- [x] Conditional statements (`if`/`then`/`else`)
 - [ ] Loops (`while`)
 - [ ] Functions (`function`/`call`)
 
@@ -48,188 +56,95 @@ make test
 - [ ] Logical operators (`and`, `or`, `not`)
 - [ ] User input
 - [ ] Floating-point numbers
-- [ ] String operations (length, substring)
+- [ ] String operations
 - [ ] File I/O
 
-### Language Overview
+---
 
-YAP uses a YAML-inspired syntax with indentation-based structure.
+## Example
 
-#### Keywords
-
-| Keyword | Description                   |
-|---------|-------------------------------|
-| `print` | Output a value to the console |
-| `set`   | Assign values to variables    |
-| `True`  | Boolean literal (true)        |
-| `False` | Boolean literal (false)       |
-
-#### Tokens
-
-| Token        | Description                              |
-|--------------|------------------------------------------|
-| `DASH`       | `-` starts a statement                   |
-| `COLON`      | `:` separates keyword/name from value    |
-| `STRING`     | Text in double quotes (`"hello"`)        |
-| `NUMERICAL`  | Integer literals (`42`)                  |
-| `IDENTIFIER` | Variable names (`myVar`, `count`)        |
-| `OPERATOR`   | Arithmetic operators (`+`, `-`, `*`, `/`)|
-| `COMMENT`    | `//` starts a comment (ignored)          |
-| `INDENT`     | Increase in indentation                  |
-| `DEDENT`     | Decrease in indentation                  |
-
-#### Statements
-
-**Print** — Output a value or expression:
+Create a file called `demo.yap`:
 
 ```yaml
-- print: "hello world"
-- print: 42
-- print: myVariable
-- print: 5 + 10
-- print: x * 2
-- print: True
-- print: x > 5
-```
+// YAP Demo - showcasing all language features
 
-**Set** — Assign variables (supports expressions):
-
-```yaml
+// Variables: strings, numbers, booleans, expressions
 - set:
-  - name: "Alice"
-  - count: 100
-  - total: 10 + 20
-  - doubled: count * 2
-  - isValid: True
-  - isGreater: count > 50
-```
+  - name: "YAP"
+  - version: 1
+  - x: 10 + 5 - 3
+  - y: x * 2
+  - greeting: "Hello, " + name + "!"
+  - isReady: True
+  - isBig: x > 10
 
-#### Operators
-
-**Arithmetic:**
-
-| Operator | Description                              |
-|----------|------------------------------------------|
-| `+`      | Addition (numbers) or concatenation (strings) |
-| `-`      | Subtraction                              |
-| `*`      | Multiplication                           |
-| `/`      | Division (integer)                       |
-
-**Comparison:**
-
-| Operator | Description         |
-|----------|---------------------|
-| `>`      | Greater than        |
-| `<`      | Less than           |
-| `>=`     | Greater or equal    |
-| `<=`     | Less or equal       |
-| `==`     | Equal               |
-| `!=`     | Not equal           |
-
-#### Comments
-
-Comments start with `//` and continue to the end of the line. They can appear on their own line or at the end of a statement:
-
-```yaml
-// This is a full-line comment
-- print: "hello"  // This is an inline comment
-
-- set:
-  - x: 10
-  // - y: 5   <- This line is commented out
-  - z: 20
-```
-
-> 📖 See [GRAMMAR.md](GRAMMAR.md) for the complete language specification.
-
-### Examples
-
-#### Basic Example
-
-Create a file called `hello.yap`:
-
-```yaml
-- set:
-  - greeting: "Hello, YAP!"
-  - count: 3
-
+// Print values and expressions
 - print: greeting
-- print: count
-- print: "Done!"
+- print: "Version:"
+- print: version
+- print: "x ="
+- print: x
+- print: "y ="
+- print: y
+
+// Conditionals with nesting
+- if: isBig
+  then:
+    - print: "x is big!"
+    - if: x < 20
+      then:
+        - print: "but not too big"
+      else:
+        - print: "wow, it's huge!"
+  else:
+    - print: "x is small"
+
+// Comparisons
+- print: "Is x equal to 12?"
+- print: x == 12
+- print: "Is y greater than or equal to 30?"
+- print: y >= 30
+
+// Final message
+- print: "Done!"  // inline comment
 ```
 
 Run it:
 
 ```bash
-yap run hello.yap
+./bin/yap run demo.yap
 ```
 
 Output:
+
 ```
 Hello, YAP!
-3
+Version:
+1
+x =
+12
+y =
+24
+x is big!
+but not too big
+Is x equal to 12?
+true
+Is y greater than or equal to 30?
+false
 Done!
 ```
 
-#### Expressions Example
+---
 
-Create a file called `math.yap`:
+## Documentation
 
-```yaml
-- set:
-  - x: 10 + 10 - 15
-  - y: x * 4
-  - z: y / 5
+| Document | Description |
+|----------|-------------|
+| [LANGUAGE.md](LANGUAGE.md) | Language guide and syntax reference |
+| [GRAMMAR.md](GRAMMAR.md) | Complete formal language specification |
 
-- print: x
-- print: y
-- print: x * z
-```
+---
 
-Run it:
-
-```bash
-yap run math.yap
-```
-
-Output:
-```
-5
-20
-20
-```
-
-#### Booleans and Comparisons Example
-
-Create a file called `compare.yap`:
-
-```yaml
-- set:
-  - a: 10
-  - b: 5
-  - isGreater: a > b
-  - isEqual: a == b
-
-- print: isGreater
-- print: isEqual
-- print: True
-- print: a >= 10
-```
-
-Run it:
-
-```bash
-yap run compare.yap
-```
-
-Output:
-```
-true
-false
-true
-true
-```
-
-### License
+## License
 
 See [LICENSE](LICENSE) for details.

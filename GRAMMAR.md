@@ -117,13 +117,16 @@ Keywords are reserved identifiers with special meaning. They cannot be used as v
 |----------|------------------------------------|
 | `print`  | Output a value to the console      |
 | `set`    | Assign values to variables         |
+| `if`     | Conditional statement              |
+| `then`   | True branch of if statement        |
+| `else`   | False branch of if statement       |
 | `True`   | Boolean literal (true)             |
 | `False`  | Boolean literal (false)            |
 
 Formally:
 
 ```
-keyword: "print" | "set" | "True" | "False"
+keyword: "print" | "set" | "if" | "then" | "else" | "True" | "False"
 ```
 
 ---
@@ -291,6 +294,7 @@ statement:      DASH KEYWORD COLON statement_body NEWLINE
 
 statement_body: print_body
               | set_body
+              | if_body
 ```
 
 ### 8.3. Print Statement
@@ -355,7 +359,80 @@ assignment:     DASH IDENTIFIER COLON expression NEWLINE
   - isGreater: x > 5
 ```
 
-### 8.5. Expressions
+### 8.5. If Statement
+
+The `if` statement conditionally executes a block of statements based on a boolean expression.
+
+```
+if_body:        expression NEWLINE INDENT then_clause else_clause? DEDENT
+
+then_clause:    KEYWORD("then") COLON NEWLINE block
+
+else_clause:    KEYWORD("else") COLON NEWLINE block
+
+block:          INDENT statement* DEDENT
+              | ε                           (empty block)
+```
+
+#### Syntax
+
+```yaml
+- if: <condition>
+  then:
+    <statements>
+  else:
+    <statements>
+```
+
+The `else` clause is optional. Both `then` and `else` blocks can be empty.
+
+#### Examples
+
+**Basic if-then-else:**
+
+```yaml
+- if: x > 5
+  then:
+    - print: "x is big"
+  else:
+    - print: "x is small"
+```
+
+**If without else:**
+
+```yaml
+- if: x > 0
+  then:
+    - print: "x is positive"
+```
+
+**Nested if statements:**
+
+```yaml
+- if: x > 5
+  then:
+    - print: "x is big"
+    - if: x < 20
+      then:
+        - print: "but not that big"
+      else:
+        - print: "it's huge!"
+  else:
+    - print: "x is small"
+```
+
+**Empty blocks:**
+
+```yaml
+- if: x > 5
+  then:
+    - print: "x is big"
+  else:
+```
+
+**Note**: The `then` and `else` keywords must appear inside the if statement's indented block and are not prefixed with a dash. A standalone `- then:` or `- else:` without a preceding `- if:` will cause a parse error.
+
+### 8.7. Expressions
 
 An expression produces a value. Expressions can be simple values or binary operations.
 
@@ -418,12 +495,22 @@ statement       ::= DASH KEYWORD COLON statement_body NEWLINE
 
 statement_body  ::= print_body
                   | set_body
+                  | if_body
 
 print_body      ::= expression
 
 set_body        ::= NEWLINE INDENT assignment+ DEDENT
 
 assignment      ::= DASH IDENTIFIER COLON expression NEWLINE
+
+if_body         ::= expression NEWLINE INDENT then_clause else_clause? DEDENT
+
+then_clause     ::= KEYWORD("then") COLON NEWLINE block
+
+else_clause     ::= KEYWORD("else") COLON NEWLINE block
+
+block           ::= INDENT statement* DEDENT
+                  | ε
 
 expression      ::= value (OPERATOR value)*
 
@@ -436,7 +523,7 @@ STRING          ::= '"' <characters> '"'
 NUMERICAL       ::= digit+
 IDENTIFIER      ::= letter (letter | digit)*
 BOOLEAN         ::= "True" | "False"
-KEYWORD         ::= "print" | "set" | "True" | "False"
+KEYWORD         ::= "print" | "set" | "if" | "then" | "else" | "True" | "False"
 OPERATOR        ::= "+" | "-" | "*" | "/" | ">" | "<" | ">=" | "<=" | "==" | "!="
 COMMENT         ::= "//" <any characters until newline>
 
@@ -560,6 +647,64 @@ true
 4. The inline comments after print statements are ignored
 5. The last line is commented out entirely
 
+### 10.5. Conditional Example
+
+```yaml
+- set:
+  - x: 10
+
+- if: x > 5
+  then:
+    - print: "x is big"
+    - if: x < 20
+      then:
+        - print: "well not that big"
+      else:
+        - print: "it must be huge!"
+  else:
+    - print: "x is small"
+```
+
+#### Output
+
+```
+x is big
+well not that big
+```
+
+#### Explanation
+
+1. `x` is set to `10`
+2. `x > 5` evaluates to `True`, so the `then` block executes
+3. First, `"x is big"` is printed
+4. Then the nested if is evaluated: `x < 20` is `True`
+5. So `"well not that big"` is printed
+6. The outer `else` block is not executed
+
+### 10.6. Conditional with Empty Blocks
+
+```yaml
+- set:
+  - x: 10
+
+- if: x > 5
+  then:
+    - print: "x is big"
+  else:
+```
+
+#### Output
+
+```
+x is big
+```
+
+#### Explanation
+
+1. `x > 5` is `True`, so the `then` block executes
+2. The `else` block is empty and never executed
+3. Empty blocks are valid and produce no output
+
 ---
 
 ## 11. Errors
@@ -573,10 +718,11 @@ The lexer, parser, and runtime will report errors for:
 | Unterminated string     | String literal missing closing quote              |
 | Invalid token           | Unrecognized character in source                  |
 | Unexpected token        | Token not expected at current position            |
-| Unknown statement       | Keyword not recognized                            |
+| Unknown statement       | Keyword not recognized (e.g., `- then:` or `- else:` without `- if:`) |
 | Undefined variable      | Variable used before being defined                |
 | Division by zero        | Attempt to divide by zero                         |
 | Type mismatch           | Incompatible types in binary operation            |
+| Invalid condition       | If condition does not evaluate to a boolean       |
 
 ---
 

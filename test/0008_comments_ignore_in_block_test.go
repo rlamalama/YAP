@@ -25,10 +25,18 @@ func TestCommentsIgnoreInBlockUndefinedVar(t *testing.T) {
 	program, err := builder.Build(ast.Statements)
 	assert.Nil(t, err, "building should succeed")
 
-	v := vm.New(program)
-	err = v.Run()
+	output := test_util.CaptureStdout(t, func() {
+		v := vm.New(program)
+		err = v.Run()
 
-	// Should error because y is undefined (it was commented out)
-	assert.NotNil(t, err, "should error because y is undefined")
-	assert.Contains(t, err.Error(), "y", "error should mention undefined variable y")
+		// Should error because 	output := test_util.CaptureStdout(t, func() {is undefined (it was commented out)
+		assert.NotNil(t, err, "should error because y is undefined")
+		assert.Contains(t, err.Error(), "y", "error should mention undefined variable y")
+
+	})
+	expected :=
+		`10
+`
+	assert.Equal(t, expected, output)
+
 }
