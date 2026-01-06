@@ -12,15 +12,17 @@ import (
 type VM struct {
 	instructions []ir.Instruction
 	env          map[string]interface{}
+	pc           int // program counter
 }
 
 func New(instructions []ir.Instruction) *VM {
 	env := make(map[string]interface{})
-	return &VM{instructions: instructions, env: env}
+	return &VM{instructions: instructions, env: env, pc: 0}
 }
 
 func (vm *VM) Run() *yaperror.YapError {
-	for _, instr := range vm.instructions {
+	for vm.pc < len(vm.instructions) {
+		instr := vm.instructions[vm.pc]
 		switch instr.Op {
 		case ir.OpSet:
 			name := instr.Arg.Value
@@ -29,6 +31,7 @@ func (vm *VM) Run() *yaperror.YapError {
 				return err
 			}
 			vm.env[name] = val
+			vm.pc++
 
 		case ir.OpPrint:
 			val, err := vm.evaluate(instr.Expr)
@@ -36,6 +39,25 @@ func (vm *VM) Run() *yaperror.YapError {
 				return err
 			}
 			fmt.Println(val)
+			vm.pc++
+
+		case ir.OpJumpIfFalse:
+			val, err := vm.evaluate(instr.Expr)
+			if err != nil {
+				return err
+			}
+			boolVal, ok := val.(bool)
+			if !ok {
+				return yaperror.NewRuntimeError(fmt.Sprintf("condition must be a boolean, got %T", val))
+			}
+			if !boolVal {
+				vm.pc = instr.Arg.Offset
+			} else {
+				vm.pc++
+			}
+
+		case ir.OpJump:
+			vm.pc = instr.Arg.Offset
 
 		default:
 			return yaperror.NewUnknownOpcodeError(int(instr.Op))

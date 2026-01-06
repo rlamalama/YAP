@@ -448,3 +448,126 @@ func TestLexCommentsIgnoreInBlock(t *testing.T) {
 		}
 	}
 }
+
+// Test file content:
+// - set:
+//
+//   - x: 10
+//
+//   - if: x > 5
+//     then:
+//
+//   - print: "x is big"
+//
+//   - if: x < 20
+//     then:
+//
+//   - print: "well not that big"
+//     else:
+//
+//   - print: "it must be huge!"
+//     else:
+//
+//   - print: "x is small"
+func TestLexIfThenElse(t *testing.T) {
+	file := test_util.OpenTestFile(t, test_util.IfThenElseYAP, testFileDirPrefix)
+	defer file.Close()
+
+	lex := lexer.NewLexer(file, test_util.IfThenElseYAP)
+	toks, err := lex.Lex()
+	assert.Nil(t, err)
+
+	expectedTok := []lexer.Token{
+		// Line 1: - set:
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordSet},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 2:   - x: 10 (indented)
+		{Kind: lexer.TokenIndent, Value: ""},
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenNumerical, Value: "10"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 3: (empty line causes dedent)
+		{Kind: lexer.TokenDedent, Value: ""},
+		// Line 4: - if: x > 5
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordIf},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenOperator, Value: ">"},
+		{Kind: lexer.TokenNumerical, Value: "5"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 5:   then: (indented)
+		{Kind: lexer.TokenIndent, Value: ""},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordThen},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 6:     - print: "x is big" (indented)
+		{Kind: lexer.TokenIndent, Value: ""},
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenString, Value: "x is big"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 7:     - if: x < 20
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordIf},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenIdentifier, Value: "x"},
+		{Kind: lexer.TokenOperator, Value: "<"},
+		{Kind: lexer.TokenNumerical, Value: "20"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 8:       then: (indented)
+		{Kind: lexer.TokenIndent, Value: ""},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordThen},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 9:         - print: "well not that big" (indented)
+		{Kind: lexer.TokenIndent, Value: ""},
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenString, Value: "well not that big"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 10:       else: (dedented)
+		{Kind: lexer.TokenDedent, Value: ""},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordElse},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 11:         - print: "it must be huge!" (indented)
+		{Kind: lexer.TokenIndent, Value: ""},
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenString, Value: "it must be huge!"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 12:   else: (dedented 3 times: 8 spaces -> 2 spaces)
+		{Kind: lexer.TokenDedent, Value: ""},
+		{Kind: lexer.TokenDedent, Value: ""},
+		{Kind: lexer.TokenDedent, Value: ""},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordElse},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// Line 13:     - print: "x is small" (indented)
+		{Kind: lexer.TokenIndent, Value: ""},
+		{Kind: lexer.TokenDash, Value: "-"},
+		{Kind: lexer.TokenKeyword, Value: lexer.KeywordPrint},
+		{Kind: lexer.TokenColon, Value: ":"},
+		{Kind: lexer.TokenString, Value: "x is small"},
+		{Kind: lexer.TokenNewline, Value: ""},
+		// End of file (dedents)
+		{Kind: lexer.TokenDedent, Value: ""},
+		{Kind: lexer.TokenDedent, Value: ""},
+	}
+
+	assert.Equal(t, len(expectedTok), len(toks), "token count mismatch")
+	for i, tok := range toks {
+		assert.Equal(t, expectedTok[i].Kind.String(), tok.Kind.String(), "token kind mismatch at %d", i)
+		if expectedTok[i].Value != "" {
+			assert.Equal(t, expectedTok[i].Value, tok.Value, "token value mismatch at %d", i)
+		}
+	}
+}

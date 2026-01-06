@@ -236,3 +236,60 @@ func TestParseCommentsIgnoreInBlock(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "y", yIdent.Name)
 }
+
+// Test parsing if-then-else statement
+func TestParseIfThenElse(t *testing.T) {
+	p := parser.NewParser(test_util.GetTestFilepath(test_util.IfThenElseYAP, testFileDir))
+	prog, err := p.Parse()
+
+	assert.Nil(t, err)
+	assert.NotNil(t, prog)
+	// 1 set statement + 1 if statement = 2 statements
+	assert.Equal(t, 2, len(prog.Statements))
+
+	// First statement should be a set
+	setStmt := prog.Statements[0].(parser.SetStmt)
+	assert.Equal(t, 1, len(setStmt.Assignment))
+	assert.Equal(t, "x", setStmt.Assignment[0].Name)
+
+	// Second statement should be an if statement
+	ifStmt, ok := prog.Statements[1].(parser.IfStmt)
+	assert.True(t, ok, "second statement should be IfStmt")
+	assert.Equal(t, parser.StmtTypeIf, ifStmt.Type())
+
+	// Verify condition is a binary expression (x > 5)
+	condExpr, ok := ifStmt.Condition.(*parser.BinaryExpr)
+	assert.True(t, ok, "condition should be BinaryExpr")
+	assert.Equal(t, ">", condExpr.Operator)
+
+	// Verify then block has 2 statements (print and nested if)
+	assert.Equal(t, 2, len(ifStmt.Then), "then block should have 2 statements")
+
+	// First then statement is print
+	thenPrint, ok := ifStmt.Then[0].(parser.PrintStmt)
+	assert.True(t, ok)
+	strLit, ok := thenPrint.Expr.(*parser.StringLiteral)
+	assert.True(t, ok)
+	assert.Equal(t, "x is big", strLit.Value)
+
+	// Second then statement is nested if
+	nestedIf, ok := ifStmt.Then[1].(parser.IfStmt)
+	assert.True(t, ok, "second then statement should be nested IfStmt")
+
+	// Verify nested if condition (x < 20)
+	nestedCond, ok := nestedIf.Condition.(*parser.BinaryExpr)
+	assert.True(t, ok)
+	assert.Equal(t, "<", nestedCond.Operator)
+
+	// Verify nested if has then and else blocks
+	assert.Equal(t, 1, len(nestedIf.Then))
+	assert.Equal(t, 1, len(nestedIf.Else))
+
+	// Verify outer else block has 1 statement
+	assert.Equal(t, 1, len(ifStmt.Else), "else block should have 1 statement")
+	elsePrint, ok := ifStmt.Else[0].(parser.PrintStmt)
+	assert.True(t, ok)
+	elseStrLit, ok := elsePrint.Expr.(*parser.StringLiteral)
+	assert.True(t, ok)
+	assert.Equal(t, "x is small", elseStrLit.Value)
+}

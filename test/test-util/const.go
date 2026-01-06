@@ -14,4 +14,9 @@ const (
 	BooleanComparisonYAP     = "0007-boolean-comparison.yap"
 	CommentsIgnoredYAP       = "0008-comments-ignored.yap"
 	CommentsIgnoreInBlockYAP = "0008-comments-ignore-in-block.yap"
+	IfThenElseYAP            = "0009-if-then-else.yap"
+	EmptyElseYAP             = "0009-empty-else.yap"
+	EmptyThenYAP             = "0009-empty-then.yap"
+	HangingElseYAP           = "0009-hanging-else.yap"
+	HangingThenYAP           = "0009-hanging-then.yap"
 )

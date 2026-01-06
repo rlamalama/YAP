@@ -7,6 +7,9 @@ const (
 	KeywordSet   = "set"
 	KeywordTrue  = "True"
 	KeywordFalse = "False"
+	KeywordIf    = "if"
+	KeywordThen  = "then"
+	KeywordElse  = "else"
 )
 
 var Keywords = []Keyword{
@@ -14,6 +17,9 @@ var Keywords = []Keyword{
 	KeywordSet,
 	KeywordTrue,
 	KeywordFalse,
+	KeywordIf,
+	KeywordThen,
+	KeywordElse,
 }
 
 func IsKeyword(s string) bool {

@@ -122,6 +122,8 @@ func (p *Parser) parseStmt() (Stmt, error) {
 		return p.parsePrint()
 	case lexer.KeywordSet:
 		return p.parseSet()
+	case lexer.KeywordIf:
+		return p.parseIf()
 	default:
 		return nil, yaperror.NewUnknownStatementError(
 			p.filename, key.Line, key.Col, key.Value,
@@ -300,4 +302,134 @@ func (p *Parser) parseSet() (Stmt, error) {
 			val.Kind.String(), fmt.Sprintf("%s or", lexer.TokenNewline.String()),
 		)
 	}
+}
+
+func (p *Parser) parseIf() (Stmt, error) {
+	// Parse the condition expression (e.g., "x > 5")
+	condition, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+
+	// Skip any trailing comment before newline
+	for p.peek().Kind == lexer.TokenComment {
+		p.next()
+	}
+
+	// Expect newline after condition
+	if _, err := p.expect(lexer.TokenNewline); err != nil {
+		return nil, err
+	}
+
+	// Expect indent for then/else block
+	if _, err := p.expect(lexer.TokenIndent); err != nil {
+		return nil, err
+	}
+
+	// Parse "then:" keyword (without dash)
+	thenKey, err := p.expect(lexer.TokenKeyword)
+	if err != nil {
+		return nil, err
+	}
+	if thenKey.Value != lexer.KeywordThen {
+		return nil, yaperror.NewUnexpectedTokenError(
+			p.filename, thenKey.Line, thenKey.Col,
+			thenKey.Value, lexer.KeywordThen,
+		)
+	}
+
+	if _, err := p.expect(lexer.TokenColon); err != nil {
+		return nil, err
+	}
+
+	// Skip any trailing comment
+	for p.peek().Kind == lexer.TokenComment {
+		p.next()
+	}
+
+	// Expect newline after "then:"
+	if _, err := p.expect(lexer.TokenNewline); err != nil {
+		return nil, err
+	}
+
+	// Parse the then block statements
+	thenStmts, err := p.parseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	var elseStmts []Stmt
+
+	// Check for optional "else:" keyword
+	if p.peek().Kind == lexer.TokenKeyword && p.peek().Value == lexer.KeywordElse {
+		p.next() // consume "else"
+
+		if _, err := p.expect(lexer.TokenColon); err != nil {
+			return nil, err
+		}
+
+		// Skip any trailing comment
+		for p.peek().Kind == lexer.TokenComment {
+			p.next()
+		}
+
+		// Expect newline after "else:"
+		if _, err := p.expect(lexer.TokenNewline); err != nil {
+			return nil, err
+		}
+
+		// Parse the else block statements
+		elseStmts, err = p.parseBlock()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Expect dedent to close the if statement
+	if _, err := p.expect(lexer.TokenDedent); err != nil {
+		return nil, err
+	}
+
+	return IfStmt{
+		Condition: condition,
+		Then:      thenStmts,
+		Else:      elseStmts,
+	}, nil
+}
+
+// parseBlock parses a block of indented statements (used by then/else blocks)
+// Returns an empty slice if the block is empty (no Indent token)
+func (p *Parser) parseBlock() ([]Stmt, error) {
+	// Check if block is empty (no Indent token means empty block)
+	if p.peek().Kind != lexer.TokenIndent {
+		return []Stmt{}, nil
+	}
+
+	// Consume the indent
+	p.next()
+
+	stmts := []Stmt{}
+	for p.peek().Kind != lexer.TokenDedent && p.peek().Kind != lexer.TokenEOF {
+		// Skip comment lines
+		if p.peek().Kind == lexer.TokenComment {
+			p.next()
+			if p.peek().Kind == lexer.TokenNewline {
+				p.next()
+			}
+			continue
+		}
+
+		stmt, err := p.parseStmt()
+		if err != nil {
+			return nil, err
+		}
+		stmts = append(stmts, stmt)
+	}
+
+	// Expect dedent to close the block
+	if _, err := p.expect(lexer.TokenDedent); err != nil {
+		return nil, err
+	}
+
+	return stmts, nil
 }
