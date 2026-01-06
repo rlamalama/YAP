@@ -543,3 +543,168 @@ func TestVMUndefinedVariableError(t *testing.T) {
 	assert.NotNil(t, err, "should error because y is undefined")
 	assert.Contains(t, err.Error(), "y", "error should mention undefined variable y")
 }
+
+func TestVMIfThenElseTrueBranch(t *testing.T) {
+	// Test: x = 10, if x > 5 then print "big" else print "small"
+	// Expected output: "big" (because x > 5 is true)
+	v := vm.New([]ir.Instruction{
+		{
+			Op:   ir.OpSet,
+			Arg:  ir.Operand{Kind: ir.OperandIdentifier, Value: "x"},
+			Expr: &parser.NumericLiteral{Value: 10},
+		},
+		{
+			Op:  ir.OpJumpIfFalse,
+			Arg: ir.Operand{Kind: ir.OperandOffset, Offset: 4},
+			Expr: &parser.BinaryExpr{
+				Left:     &parser.Identifier{Name: "x"},
+				Operator: ">",
+				Right:    &parser.NumericLiteral{Value: 5},
+			},
+		},
+		{Op: ir.OpPrint, Expr: &parser.StringLiteral{Value: "big"}},
+		{Op: ir.OpJump, Arg: ir.Operand{Kind: ir.OperandOffset, Offset: 5}},
+		{Op: ir.OpPrint, Expr: &parser.StringLiteral{Value: "small"}},
+	})
+
+	output := test_util.CaptureStdout(t, func() {
+		require.Nil(t, v.Run())
+	})
+
+	assert.Equal(t, "big\n", output)
+}
+
+func TestVMIfThenElseFalseBranch(t *testing.T) {
+	// Test: x = 3, if x > 5 then print "big" else print "small"
+	// Expected output: "small" (because x > 5 is false)
+	v := vm.New([]ir.Instruction{
+		{
+			Op:   ir.OpSet,
+			Arg:  ir.Operand{Kind: ir.OperandIdentifier, Value: "x"},
+			Expr: &parser.NumericLiteral{Value: 3},
+		},
+		{
+			Op:  ir.OpJumpIfFalse,
+			Arg: ir.Operand{Kind: ir.OperandOffset, Offset: 4},
+			Expr: &parser.BinaryExpr{
+				Left:     &parser.Identifier{Name: "x"},
+				Operator: ">",
+				Right:    &parser.NumericLiteral{Value: 5},
+			},
+		},
+		{Op: ir.OpPrint, Expr: &parser.StringLiteral{Value: "big"}},
+		{Op: ir.OpJump, Arg: ir.Operand{Kind: ir.OperandOffset, Offset: 5}},
+		{Op: ir.OpPrint, Expr: &parser.StringLiteral{Value: "small"}},
+	})
+
+	output := test_util.CaptureStdout(t, func() {
+		require.Nil(t, v.Run())
+	})
+
+	assert.Equal(t, "small\n", output)
+}
+
+func TestVMIfThenNoElse(t *testing.T) {
+	// Test: x = 10, if x > 5 then print "big" (no else)
+	// Expected output: "big" (because x > 5 is true)
+	v := vm.New([]ir.Instruction{
+		{
+			Op:   ir.OpSet,
+			Arg:  ir.Operand{Kind: ir.OperandIdentifier, Value: "x"},
+			Expr: &parser.NumericLiteral{Value: 10},
+		},
+		{
+			Op:  ir.OpJumpIfFalse,
+			Arg: ir.Operand{Kind: ir.OperandOffset, Offset: 3},
+			Expr: &parser.BinaryExpr{
+				Left:     &parser.Identifier{Name: "x"},
+				Operator: ">",
+				Right:    &parser.NumericLiteral{Value: 5},
+			},
+		},
+		{Op: ir.OpPrint, Expr: &parser.StringLiteral{Value: "big"}},
+	})
+
+	output := test_util.CaptureStdout(t, func() {
+		require.Nil(t, v.Run())
+	})
+
+	assert.Equal(t, "big\n", output)
+}
+
+func TestVMIfThenNoElseSkipped(t *testing.T) {
+	// Test: x = 3, if x > 5 then print "big" (no else)
+	// Expected output: "" (nothing printed because x > 5 is false)
+	v := vm.New([]ir.Instruction{
+		{
+			Op:   ir.OpSet,
+			Arg:  ir.Operand{Kind: ir.OperandIdentifier, Value: "x"},
+			Expr: &parser.NumericLiteral{Value: 3},
+		},
+		{
+			Op:  ir.OpJumpIfFalse,
+			Arg: ir.Operand{Kind: ir.OperandOffset, Offset: 3},
+			Expr: &parser.BinaryExpr{
+				Left:     &parser.Identifier{Name: "x"},
+				Operator: ">",
+				Right:    &parser.NumericLiteral{Value: 5},
+			},
+		},
+		{Op: ir.OpPrint, Expr: &parser.StringLiteral{Value: "big"}},
+	})
+
+	output := test_util.CaptureStdout(t, func() {
+		require.Nil(t, v.Run())
+	})
+
+	assert.Equal(t, "", output)
+}
+
+func TestVMNestedIfThenElse(t *testing.T) {
+	// Test nested if: x = 10, if x > 5 then (if x < 20 then print "medium" else print "large") else print "small"
+	// Expected output: "medium" (because x > 5 is true and x < 20 is true)
+	v := vm.New([]ir.Instruction{
+		// 0: x = 10
+		{
+			Op:   ir.OpSet,
+			Arg:  ir.Operand{Kind: ir.OperandIdentifier, Value: "x"},
+			Expr: &parser.NumericLiteral{Value: 10},
+		},
+		// 1: JumpIfFalse (x > 5) -> 7
+		{
+			Op:  ir.OpJumpIfFalse,
+			Arg: ir.Operand{Kind: ir.OperandOffset, Offset: 7},
+			Expr: &parser.BinaryExpr{
+				Left:     &parser.Identifier{Name: "x"},
+				Operator: ">",
+				Right:    &parser.NumericLiteral{Value: 5},
+			},
+		},
+		// 2: JumpIfFalse (x < 20) -> 5
+		{
+			Op:  ir.OpJumpIfFalse,
+			Arg: ir.Operand{Kind: ir.OperandOffset, Offset: 5},
+			Expr: &parser.BinaryExpr{
+				Left:     &parser.Identifier{Name: "x"},
+				Operator: "<",
+				Right:    &parser.NumericLiteral{Value: 20},
+			},
+		},
+		// 3: Print "medium"
+		{Op: ir.OpPrint, Expr: &parser.StringLiteral{Value: "medium"}},
+		// 4: Jump -> 6
+		{Op: ir.OpJump, Arg: ir.Operand{Kind: ir.OperandOffset, Offset: 6}},
+		// 5: Print "large"
+		{Op: ir.OpPrint, Expr: &parser.StringLiteral{Value: "large"}},
+		// 6: Jump -> 8
+		{Op: ir.OpJump, Arg: ir.Operand{Kind: ir.OperandOffset, Offset: 8}},
+		// 7: Print "small"
+		{Op: ir.OpPrint, Expr: &parser.StringLiteral{Value: "small"}},
+	})
+
+	output := test_util.CaptureStdout(t, func() {
+		require.Nil(t, v.Run())
+	})
+
+	assert.Equal(t, "medium\n", output)
+}

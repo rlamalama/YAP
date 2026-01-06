@@ -10,6 +10,7 @@ const (
 	StmtTypeUnknown StmtType = iota
 	StmtTypePrint
 	StmtTypeSet
+	StmtTypeIf
 )
 
 // Stmt is the interface for all statements
@@ -38,3 +39,13 @@ type Assignment struct {
 	Name string
 	Expr Value
 }
+
+// IfStmt represents an if-then-else statement
+type IfStmt struct {
+	Condition Value  // The conditional expression
+	Then      []Stmt // Statements to execute if condition is true
+	Else      []Stmt // Statements to execute if condition is false (can be nil)
+}
+
+func (IfStmt) stmt()          {}
+func (IfStmt) Type() StmtType { return StmtTypeIf }
