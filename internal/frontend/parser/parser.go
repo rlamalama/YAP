@@ -398,11 +398,15 @@ func (p *Parser) parseIf() (Stmt, error) {
 }
 
 // parseBlock parses a block of indented statements (used by then/else blocks)
+// Returns an empty slice if the block is empty (no Indent token)
 func (p *Parser) parseBlock() ([]Stmt, error) {
-	// Expect indent for the block
-	if _, err := p.expect(lexer.TokenIndent); err != nil {
-		return nil, err
+	// Check if block is empty (no Indent token means empty block)
+	if p.peek().Kind != lexer.TokenIndent {
+		return []Stmt{}, nil
 	}
+
+	// Consume the indent
+	p.next()
 
 	stmts := []Stmt{}
 	for p.peek().Kind != lexer.TokenDedent && p.peek().Kind != lexer.TokenEOF {
